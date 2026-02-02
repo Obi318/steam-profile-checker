@@ -1,0 +1,331 @@
+Below is a complete, definitive Project Bible + a bulletproof backup/package checklist (zip + environment + “how to restore”). It’s written so you can paste it into a single doc called something like PROJECT_BIBLE.md inside the repo.
+
+Steam Profile Checker — Project Bible (Beta v1.1)
+1) What this project is
+
+Steam Profile Checker is a lightweight web app that takes a public Steam profile URL (or vanity name / SteamID64) and outputs a Trust Score (0–100) plus a clean breakdown of the public “signals” used to compute it.
+
+It is explicitly not a cheat detector. It’s a “quick risk snapshot” to help you decide “is this person likely legit?” using public indicators.
+
+2) Current status (where we are now)
+Frontend (✅ shippable beta)
+
+Next.js app (App Router) using /app/page.js.
+
+UI: dark “Steam-y” aesthetic, clean spacing, premium glassy panels.
+
+Input supports:
+
+Steam profile URL
+
+vanity name
+
+SteamID64
+
+Optional game dropdown to add context via playtime hours (hours can slightly adjust score).
+
+Results card shows:
+
+avatar, personaName, Open profile link
+
+created date, region, profile visibility (public/private)
+
+verdict label (LIKELY LEGIT, etc.)
+
+Trust Score + progress bar
+
+signal rows: account age, steam level, selected game hours, bans, games owned
+
+optional social links
+
+API (✅ working)
+
+/app/api/check/route.js
+
+Accepts payload { input, selectedAppId, selectedGameName }
+
+Uses Steam Web API + best-effort scraping/parsing where needed (depending on your current implementation)
+
+Returns a structured JSON response consumed by the UI:
+
+trustLevel, verdict, signals, scoreSummary, bans, etc.
+
+Versioning
+
+Current version shown in UI: v1.1 Beta
+
+Current “ship candidate” is Beta v1.1.
+
+3) Goals (where we’re going)
+Product goals
+
+Ship a public web version (simple URL, fast load, looks legit)
+
+Make output “shareable” (copy link / share card image / “report URL”)
+
+Make it sticky: encourage repeat checking and discovery
+
+Monetize without ruining trust or UX
+
+Key UX principles
+
+It must feel simple + confident + non-accusatory
+
+No “coder-guy” language
+
+Must communicate: “public info summarized” in plain English
+
+Must handle edge cases gracefully (private profiles, API fail, rate limits)
+
+4) Monetization theory-crafting (clean + realistic)
+The golden rule
+
+Monetization must not make the app look like it’s selling accusations. You want “utility tool” vibes, not “witch hunt” vibes.
+
+Monetization Option A (best first): “Pro features” upgrade
+
+Free
+
+Trust Score + basic signal breakdown
+
+“Selected game hours” for one game
+
+Basic verdict labels
+
+Pro
+
+“Deep read” breakdown (why the score changed, what moved it)
+
+Multi-game check (choose up to 3 games)
+
+Export/share tools:
+
+“Shareable link” w/ snapshot
+
+“Generate card image” (for Discord/Twitter)
+
+History:
+
+saved checks
+
+compare two profiles
+
+“Watchlist” (lightweight): track changes weekly/monthly (profile goes private, new ban, etc.)
+
+Pricing idea:
+
+$5/mo or $30/yr (keep it cheap; high conversion)
+
+Monetization Option B: Ads (only if needed)
+
+Only run ads below the fold (never near the trust score)
+
+Keep it subtle
+
+If ads ever cheapen trust, remove them
+
+Monetization Option C: Affiliate traffic (low friction)
+
+If you build “recommended services” later (anti-cheat communities, coaching, etc.) — but only if it fits your brand.
+
+Keep this optional; do not lead with it.
+
+5) Traffic + growth strategy
+Phase 1: “Utility loop” (organic)
+
+Users will share results naturally if you make sharing easy:
+
+“Copy share link”
+
+“Copy image for Discord”
+
+Post it in:
+
+Steam trading communities
+
+CS2 / Rust / TF2 / Dota communities
+
+Discord servers
+
+Create short videos showing:
+
+“How to spot suspicious Steam profiles quickly”
+
+“Public signals that matter (age/level/bans)”
+
+Keep tone: “helpful tool” not “gotcha.”
+
+Phase 2: SEO pages (long-term traffic)
+
+Add static pages:
+
+/how-trust-score-works
+
+/what-vac-bans-mean
+
+/steam-profile-private-vs-public
+These can rank.
+
+Phase 3: Partnerships
+
+Mods, Discord server owners, trading groups
+
+Offer “Pro code” discounts to large communities
+
+6) Roadmap (next builds)
+v1.2 (next practical)
+
+Share link (snapshot stored)
+
+Better handling of rate limits + friendly errors
+
+Support “compare two profiles”
+
+Better “private profile” messaging
+
+v1.3
+
+Save history (optional login)
+
+Pro tier with multi-game check + exports
+
+v1.4+
+
+Watchlist/notifications (if worth it)
+
+Discord bot integration (very viral if done right)
+
+Packaging + Backup Checklist (leave no stone unturned)
+A) What to save (minimum ship bundle)
+
+You want a bundle that lets you:
+
+restore the project exactly
+
+reinstall dependencies
+
+preserve environment variable requirements
+
+preserve the “known good beta” state
+
+Must-have files/folders
+
+✅ app/
+✅ public/
+✅ package.json
+✅ package-lock.json (or pnpm-lock.yaml / yarn.lock)
+✅ next.config.mjs
+✅ postcss.config.js
+✅ tailwind.config.js (if you have it)
+✅ jsconfig.json or tsconfig.json
+✅ .gitignore
+✅ .env.local.example (important)
+✅ PROJECT_BIBLE.md (the doc you’re making)
+
+Do NOT include in the zip
+
+❌ node_modules/ (waste of space; re-installable)
+❌ .next/ (build output)
+❌ .env.local (contains secrets—don’t share it)
+
+B) The safest “final backup” method (recommended)
+Step 1 — Clean the repo
+
+Stop dev server.
+
+Delete:
+
+node_modules/
+
+.next/
+
+Step 2 — Create an env template
+
+Make sure you have:
+
+.env.local.example that contains placeholders like:
+
+STEAM_WEB_API_KEY=YOUR_KEY_HERE
+
+If you already do, perfect.
+
+Step 3 — Add a “restore instructions” file
+
+Create RESTORE.md with these instructions:
+
+RESTORE.md
+
+npm install
+
+Copy .env.local.example → .env.local
+
+Fill in STEAM_WEB_API_KEY
+
+npm run dev
+
+Open http://localhost:3000
+
+Step 4 — Zip the project
+
+Zip the project folder after removing node_modules + .next.
+
+Windows quickest safe method
+
+Right click folder → Send to → Compressed (zipped) folder
+
+Name it:
+
+steam-checker_beta_v1.1_YYYY-MM-DD.zip
+
+C) “Future thread / future you” handoff notes
+
+In addition to the zip, save a tiny text file you can paste into the next thread:
+
+HANDOFF.txt
+
+Project name: Steam Profile Checker
+
+Tech: Next.js (App Router), Node
+
+Key files:
+
+app/page.js (UI)
+
+app/api/check/route.js (API)
+
+Behavior:
+
+empty input → defaults to Shroud example
+
+games dropdown alphabetized, None first
+
+Goal: ship to web + add share links + Pro tier later
+
+Read: PROJECT_BIBLE.md, RESTORE.md
+
+Optional (but high-value) “professional” safeguard
+Put it in Git (even private/local)
+
+If you aren’t already:
+
+git init
+
+commit the current beta state
+
+tag it: v1.1-beta
+
+That way you can always roll back even if something breaks later.
+
+What I’d do next (very concrete)
+
+Create PROJECT_BIBLE.md using the sections above.
+
+Create RESTORE.md.
+
+Ensure .env.local.example exists and is correct.
+
+Delete node_modules + .next.
+
+Zip folder.
+
+(Optional) Commit + tag in Git.
