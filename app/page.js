@@ -332,9 +332,9 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white">
       <div className="mx-auto max-w-5xl px-4 py-6">
-        {/* Unified sunken container (Option 2) */}
+        {/* Unified sunken container */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          {/* Header: remove the inner border around title/tagline */}
+          {/* Header */}
           <div className="pb-5 mb-5">
             <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
               <div className="flex items-start gap-4">
@@ -410,167 +410,180 @@ export default function HomePage() {
           {/* Results */}
           {data ? (
             <div className="rounded-2xl border border-white/12 bg-white/5 p-4 sm:p-5">
-              <div className="flex items-start gap-5">
-                <img
-                  src={data.avatar || ""}
-                  alt=""
-                  className="h-16 w-16 rounded-xl border border-white/10 object-cover"
-                />
-                <div className="flex-1">
-                  <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold leading-none">
-                    {data.personaName || "Unknown"}
-                  </div>
+              {/* Responsive report layout:
+                  - Mobile: stacked
+                  - Desktop: 2 columns (summary left, details right)
+               */}
+              <div className="grid gap-5 md:grid-cols-2">
+                {/* LEFT: Summary */}
+                <div className="min-w-0">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={data.avatar || ""}
+                      alt=""
+                      className="h-16 w-16 rounded-xl border border-white/10 object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold leading-none truncate">
+                        {data.personaName || "Unknown"}
+                      </div>
 
-                  <div className="mt-2 text-white/70 flex flex-wrap gap-x-6 gap-y-1">
-                    {data.profileUrl ? (
-                      <a
-                        href={data.profileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sky-300 hover:text-sky-200"
-                      >
-                        Open profile
-                      </a>
-                    ) : null}
+                      <div className="mt-2 text-white/70 flex flex-wrap gap-x-6 gap-y-1">
+                        {data.profileUrl ? (
+                          <a
+                            href={data.profileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sky-300 hover:text-sky-200"
+                          >
+                            Open profile
+                          </a>
+                        ) : null}
 
-                    {createdShort || typeof data?.isProfilePublic === "boolean" ? (
-                      <span className="flex flex-col leading-tight">
-                        {createdShort ? (
-                          <span>
-                            Created:{" "}
-                            <span className="font-semibold text-white/85">{createdShort}</span>
+                        {createdShort || typeof data?.isProfilePublic === "boolean" ? (
+                          <span className="flex flex-col leading-tight">
+                            {createdShort ? (
+                              <span>
+                                Created:{" "}
+                                <span className="font-semibold text-white/85">{createdShort}</span>
+                              </span>
+                            ) : null}
+
+                            {typeof data?.isProfilePublic === "boolean" ? (
+                              <span className="mt-1 text-xs text-white/60">
+                                Profile:{" "}
+                                <span
+                                  className={
+                                    data.isProfilePublic
+                                      ? "font-semibold text-[#66c0f4]"
+                                      : "font-semibold text-[#e74c3c]"
+                                  }
+                                >
+                                  {data.isProfilePublic ? "Public" : "Private/limited"}
+                                </span>
+                              </span>
+                            ) : null}
                           </span>
                         ) : null}
 
-                        {typeof data?.isProfilePublic === "boolean" ? (
-                          <span className="mt-1 text-xs text-white/60">
-                            Profile:{" "}
-                            <span
-                              className={
-                                data.isProfilePublic
-                                  ? "font-semibold text-[#66c0f4]"
-                                  : "font-semibold text-[#e74c3c]"
-                              }
-                            >
-                              {data.isProfilePublic ? "Public" : "Private/limited"}
+                        {regionLabel ? (
+                          <span>
+                            Region:{" "}
+                            <span className="font-semibold text-white/85">{regionLabel}</span>
+                          </span>
+                        ) : null}
+
+                        {data.currentlyPlaying?.name ? (
+                          <span>
+                            Playing:{" "}
+                            <span className="font-semibold text-white/85">
+                              {data.currentlyPlaying.name}
                             </span>
                           </span>
                         ) : null}
-                      </span>
-                    ) : null}
+                      </div>
+                    </div>
+                  </div>
 
-                    {regionLabel ? (
-                      <span>
-                        Region: <span className="font-semibold text-white/85">{regionLabel}</span>
-                      </span>
-                    ) : null}
+                  <div className="mt-5">
+                    <div className={`text-3xl font-extrabold ${verdictColorClass(data.verdict)}`}>
+                      {data.verdict}
+                    </div>
 
-                    {data.currentlyPlaying?.name ? (
-                      <span>
-                        Playing:{" "}
-                        <span className="font-semibold text-white/85">
-                          {data.currentlyPlaying.name}
-                        </span>
-                      </span>
-                    ) : null}
+                    <div className="mt-3 text-white/75 text-base">
+                      {scoreSummary ||
+                        "Score is based on account age, Steam level, library size, ban indicators, and (optionally) hours in the selected game."}
+                    </div>
+
+                    <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                      <div className="text-2xl font-extrabold">
+                        Trust Score: {data.trustLevel} / 100
+                      </div>
+                      <div className="w-full sm:flex-1 sm:max-w-xl h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
+                        <div
+                          className={`h-full ${scoreBarColorClass(scorePct)}`}
+                          style={{ width: `${scorePct}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-6">
-                <div className={`text-3xl font-extrabold ${verdictColorClass(data.verdict)}`}>
-                  {data.verdict}
-                </div>
-
-                <div className="mt-3 text-white/75 text-base">
-                  {scoreSummary ||
-                    "Score is based on account age, Steam level, library size, ban indicators, and (optionally) hours in the selected game."}
-                </div>
-
-                <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                  <div className="text-2xl font-extrabold">
-                    Trust Score: {data.trustLevel} / 100
-                  </div>
-                  <div className="w-full sm:flex-1 sm:max-w-xl h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
-                    <div
-                      className={`h-full ${scoreBarColorClass(scorePct)}`}
-                      style={{ width: `${scorePct}%` }}
+                {/* RIGHT: Details */}
+                <div className="min-w-0">
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-4">
+                    <SignalRow
+                      label="Account age"
+                      value={data?.signals?.ageText ?? "—"}
+                      tier={ageTier.tier}
+                      note={ageTier.note}
+                      rightHint={ageTier.hint}
                     />
+
+                    <SignalRow
+                      label="Steam level"
+                      value={typeof data.steamLevel === "number" ? String(data.steamLevel) : "—"}
+                      tier={levelTier.tier}
+                      note={levelTier.note}
+                      rightHint={levelTier.hint}
+                    />
+
+                    <SignalRow
+                      label={selectedGame ? `${selectedGame.name} hours` : "Selected game hours"}
+                      value={selectedHours ? `${selectedHours.hours} hrs` : "—"}
+                      tier={hoursTier.tier}
+                      note={hoursTier.note}
+                      rightHint={hoursTier.hint}
+                    />
+
+                    <SignalRow
+                      label="Ban indicators"
+                      value={banDisplay.value}
+                      tier={bansTier.tier}
+                      note={bansTier.note}
+                      rightHint={banDisplay.hint}
+                    />
+
+                    <SignalRow
+                      label="Games owned"
+                      value={typeof data.gamesCount === "number" ? String(data.gamesCount) : "—"}
+                      tier={gamesTier.tier}
+                      note={gamesTier.note}
+                      rightHint={gamesTier.hint}
+                    />
+
+                    {showPrivateHint ? (
+                      <div className="py-3 text-white/65">
+                        Profile details appear private/limited (some signals may be unavailable)
+                      </div>
+                    ) : null}
                   </div>
-                </div>
 
-                <div className="mt-5 rounded-xl border border-white/10 bg-black/20 px-4">
-                  <SignalRow
-                    label="Account age"
-                    value={data?.signals?.ageText ?? "—"}
-                    tier={ageTier.tier}
-                    note={ageTier.note}
-                    rightHint={ageTier.hint}
-                  />
-
-                  <SignalRow
-                    label="Steam level"
-                    value={typeof data.steamLevel === "number" ? String(data.steamLevel) : "—"}
-                    tier={levelTier.tier}
-                    note={levelTier.note}
-                    rightHint={levelTier.hint}
-                  />
-
-                  <SignalRow
-                    label={selectedGame ? `${selectedGame.name} hours` : "Selected game hours"}
-                    value={selectedHours ? `${selectedHours.hours} hrs` : "—"}
-                    tier={hoursTier.tier}
-                    note={hoursTier.note}
-                    rightHint={hoursTier.hint}
-                  />
-
-                  <SignalRow
-                    label="Ban indicators"
-                    value={banDisplay.value}
-                    tier={bansTier.tier}
-                    note={bansTier.note}
-                    rightHint={banDisplay.hint}
-                  />
-
-                  <SignalRow
-                    label="Games owned"
-                    value={typeof data.gamesCount === "number" ? String(data.gamesCount) : "—"}
-                    tier={gamesTier.tier}
-                    note={gamesTier.note}
-                    rightHint={gamesTier.hint}
-                  />
-
-                  {showPrivateHint ? (
-                    <div className="py-3 text-white/65">
-                      Profile details appear private/limited (some signals may be unavailable)
+                  {Array.isArray(data.socialLinks) && data.socialLinks.length ? (
+                    <div className="mt-5">
+                      <div className="text-white/80 font-semibold mb-2">Social links</div>
+                      <div className="flex flex-wrap gap-2">
+                        {data.socialLinks.map((l) => (
+                          <a
+                            key={l.url}
+                            href={l.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${socialButtonClass(
+                              l.label
+                            )}`}
+                          >
+                            {l.label}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
-                </div>
 
-                {Array.isArray(data.socialLinks) && data.socialLinks.length ? (
-                  <div className="mt-7">
-                    <div className="text-white/80 font-semibold mb-2">Social links</div>
-                    <div className="flex flex-wrap gap-2">
-                      {data.socialLinks.map((l) => (
-                        <a
-                          key={l.url}
-                          href={l.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${socialButtonClass(
-                            l.label
-                          )}`}
-                        >
-                          {l.label}
-                        </a>
-                      ))}
-                    </div>
+                  <div className="mt-5 text-white/50 text-sm">
+                    {data.disclaimer ||
+                      "Trust Score uses public Steam signals (account age, profile transparency, Steam level, optional game hours, and ban indicators). Not a cheat detector."}
                   </div>
-                ) : null}
-
-                <div className="mt-6 text-white/50 text-sm">
-                  {data.disclaimer ||
-                    "Trust Score uses public Steam signals (account age, profile transparency, Steam level, optional game hours, and ban indicators). Not a cheat detector."}
                 </div>
               </div>
             </div>
