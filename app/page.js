@@ -7,7 +7,6 @@ function isSteamishInput(s) {
   if (!t) return false;
   if (/^\d{17}$/.test(t)) return true;
   if (/steamcommunity\.com\/(id|profiles)\//i.test(t)) return true;
-  // allow vanity names too (route will try ResolveVanityURL)
   if (/^[a-zA-Z0-9_-]{2,64}$/.test(t)) return true;
   return false;
 }
@@ -32,6 +31,8 @@ function verdictColorClass(verdict) {
       return "text-orange-400";
     case "HIGH RISK":
       return "text-red-500";
+    case "UNKNOWN":
+      return "text-orange-400";
     default:
       return "text-gray-200";
   }
@@ -43,6 +44,15 @@ function scoreBarColorClass(score) {
   if (score >= 50) return "bg-yellow-300";
   if (score >= 30) return "bg-orange-400";
   return "bg-red-500";
+}
+
+function scoreBarVisuals(score) {
+  // Minimal "premium" look: subtle gradient + glow that matches the tier color.
+  if (score >= 85) return { color: "#34d399", glow: "rgba(52,211,153,0.28)" }; // emerald-400
+  if (score >= 70) return { color: "#a3e635", glow: "rgba(163,230,53,0.26)" }; // lime-400
+  if (score >= 50) return { color: "#fde047", glow: "rgba(253,224,71,0.22)" }; // yellow-300
+  if (score >= 30) return { color: "#fb923c", glow: "rgba(251,146,60,0.22)" }; // orange-400
+  return { color: "#ef4444", glow: "rgba(239,68,68,0.22)" }; // red-500
 }
 
 function socialButtonClass(label) {
@@ -122,6 +132,14 @@ function tierForGamesOwned(count) {
   return { tier: "good", note: "Healthy library", hint: "Good signal" };
 }
 
+function tierForFriends(count) {
+  if (typeof count !== "number") return { tier: "neutral", note: "Unknown friends", hint: "" };
+  if (count === 0) return { tier: "warn", note: "No visible friends", hint: "Context-dependent" };
+  if (count < 10) return { tier: "warn", note: "Few friends", hint: "Mild signal" };
+  if (count < 50) return { tier: "good", note: "Some friends", hint: "Good signal" };
+  return { tier: "good", note: "Strong social footprint", hint: "Good signal" };
+}
+
 function tierForGameHours(hours) {
   if (hours == null) return { tier: "neutral", note: "Not checked", hint: "" };
   if (typeof hours !== "number") return { tier: "neutral", note: "Unavailable", hint: "" };
@@ -146,17 +164,14 @@ function tierForBans(bans, economyRelevant) {
   const days = typeof bans.DaysSinceLastBan === "number" ? bans.DaysSinceLastBan : null;
   const totalCore = vac + game;
 
-  // Economy/community actions are almost always meaningful.
   if (community) return { tier: "bad", note: "Community ban", hint: "Severe impact" };
 
-  // Economy ban is only considered a strong signal for trading-heavy games.
   if (economy && economy !== "none") {
     return economyRelevant
       ? { tier: "bad", note: "Economy restriction", hint: "High impact" }
       : { tier: "warn", note: "Economy flag", hint: "Context-dependent" };
   }
 
-  // Multiple bans is harsher.
   if (totalCore >= 2) {
     if (days === null) return { tier: "bad", note: "Multiple bans", hint: "High impact" };
     if (days < 365) return { tier: "bad", note: "Multiple bans (recent)", hint: "Severe impact" };
@@ -164,7 +179,6 @@ function tierForBans(bans, economyRelevant) {
     return { tier: "bad", note: "Multiple bans (older)", hint: "Moderate impact" };
   }
 
-  // One-off ban: apply a time-decay mindset.
   if (days === null) return { tier: "warn", note: "Ban history", hint: "Unknown recency" };
   if (days < 365) return { tier: "bad", note: "Recent ban (<1y)", hint: "Severe impact" };
   if (days < 730) return { tier: "bad", note: "Ban in last 2y", hint: "High impact" };
@@ -176,14 +190,12 @@ function tierForBans(bans, economyRelevant) {
 export default function HomePage() {
   const DEFAULT_PROFILE_URL = "https://steamcommunity.com/id/C9shroud/";
 
-  // Option A behavior: start empty; placeholder shows the example; clicking Check empty runs default
   const [input, setInput] = useState("");
   const [selectedAppId, setSelectedAppId] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
 
-  // Steam games we can actually look up hours for (Steam appids)
   const games = useMemo(() => {
     const list = [
       { name: "Apex Legends", appid: 1172470 },
@@ -200,7 +212,6 @@ export default function HomePage() {
       { name: "Tom Clancy's Rainbow Six Siege", appid: 359550 },
     ];
 
-    // Alphabetize, but we keep "None (base score)" as the separate first option in the <select>
     return list.sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
@@ -217,7 +228,6 @@ export default function HomePage() {
     const raw = (input || "").trim();
     const effectiveInput = raw ? raw : DEFAULT_PROFILE_URL;
 
-    // If they hit Check with empty input, run the default and populate the field for transparency
     if (!raw) setInput(DEFAULT_PROFILE_URL);
 
     if (!isSteamishInput(effectiveInput)) {
@@ -251,7 +261,10 @@ export default function HomePage() {
   }
 
   const score = data?.trustLevel ?? null;
-  const scorePct = typeof score === "number" ? Math.max(0, Math.min(100, score)) : 0;
+  const hasScore = typeof score === "number";
+  const scorePct = hasScore ? Math.max(0, Math.min(100, score)) : 0;
+  const knobPct = hasScore ? Math.min(98, Math.max(2, scorePct)) : 0;
+  const visuals = scoreBarVisuals(scorePct);
 
   const createdShort = formatShortDate(data?.createdAt);
   const regionLabel = data?.region?.label ?? null;
@@ -261,15 +274,16 @@ export default function HomePage() {
       ? { name: data.selectedGame.name, hours: data.selectedGame.hours }
       : null;
 
-  const showPrivateHint = data?.isProfilePublic === false;
   const bans = data?.bans || null;
+  const friendsCount = typeof data?.friendsCount === "number" ? data.friendsCount : null;
+  const openness = data?.openness ?? null;
 
   const scoreSummary = data?.scoreSummary ?? null;
 
-  // Tiers
   const ageTier = tierForAccountAgeDays(data?.signals?.ageDays ?? null);
   const levelTier = tierForSteamLevel(data?.steamLevel);
   const gamesTier = tierForGamesOwned(data?.gamesCount);
+  const friendsTier = tierForFriends(friendsCount);
   const hoursTier = selectedGame
     ? tierForGameHours(data?.selectedGame?.hours ?? null)
     : { tier: "neutral", note: "No game selected", hint: "" };
@@ -332,9 +346,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white">
       <div className="mx-auto max-w-5xl px-4 py-6">
-        {/* Unified sunken container */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          {/* Header */}
           <div className="pb-5 mb-5">
             <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
               <div className="flex items-start gap-4">
@@ -410,10 +422,6 @@ export default function HomePage() {
           {/* Results */}
           {data ? (
             <div className="rounded-2xl border border-white/12 bg-white/5 p-4 sm:p-5">
-              {/* Responsive report layout:
-                  - Mobile: stacked
-                  - Desktop: 2 columns (summary left, details right)
-               */}
               <div className="grid gap-5 md:grid-cols-2">
                 {/* LEFT: Summary */}
                 <div className="min-w-0">
@@ -440,7 +448,7 @@ export default function HomePage() {
                           </a>
                         ) : null}
 
-                        {createdShort || typeof data?.isProfilePublic === "boolean" ? (
+                        {createdShort || openness ? (
                           <span className="flex flex-col leading-tight">
                             {createdShort ? (
                               <span>
@@ -449,17 +457,19 @@ export default function HomePage() {
                               </span>
                             ) : null}
 
-                            {typeof data?.isProfilePublic === "boolean" ? (
+                            {openness ? (
                               <span className="mt-1 text-xs text-white/60">
-                                Profile:{" "}
+                                Openness:{" "}
                                 <span
                                   className={
-                                    data.isProfilePublic
-                                      ? "font-semibold text-[#66c0f4]"
-                                      : "font-semibold text-[#e74c3c]"
+                                    openness === "Open"
+                                      ? "font-semibold text-emerald-300"
+                                      : openness === "Semi-Open"
+                                      ? "font-semibold text-yellow-300"
+                                      : "font-semibold text-red-400"
                                   }
                                 >
-                                  {data.isProfilePublic ? "Public" : "Private/limited"}
+                                  {openness}
                                 </span>
                               </span>
                             ) : null}
@@ -468,8 +478,7 @@ export default function HomePage() {
 
                         {regionLabel ? (
                           <span>
-                            Region:{" "}
-                            <span className="font-semibold text-white/85">{regionLabel}</span>
+                            Region: <span className="font-semibold text-white/85">{regionLabel}</span>
                           </span>
                         ) : null}
 
@@ -491,19 +500,35 @@ export default function HomePage() {
                     </div>
 
                     <div className="mt-3 text-white/75 text-base">
-                      {scoreSummary ||
-                        "Score is based on account age, Steam level, library size, ban indicators, and (optionally) hours in the selected game."}
+                      {scoreSummary || "Trust score is based on the available public signals."}
                     </div>
 
                     <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="text-2xl font-extrabold">
-                        Trust Score: {data.trustLevel} / 100
+                        Trust Score: {hasScore ? `${score} / 100` : "Unknown"}
                       </div>
-                      <div className="w-full sm:flex-1 sm:max-w-xl h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
-                        <div
-                          className={`h-full ${scoreBarColorClass(scorePct)}`}
-                          style={{ width: `${scorePct}%` }}
-                        />
+
+                      <div className="w-full sm:flex-1 sm:max-w-xl">
+                        <div className="relative h-3 rounded-full bg-white/10 overflow-hidden border border-white/10">
+                          {hasScore ? (
+                            <>
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${scorePct}%`,
+                                  background: `linear-gradient(90deg, ${visuals.color}, rgba(255,255,255,0.14))`,
+                                  boxShadow: `0 0 18px ${visuals.glow}`,
+                                }}
+                              />
+                              <div
+                                className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white/90 border border-black/40 shadow-[0_6px_18px_rgba(0,0,0,0.35)]"
+                                style={{ left: `calc(${knobPct}% - 8px)` }}
+                              />
+                            </>
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/5 to-white/10 opacity-70" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -511,51 +536,65 @@ export default function HomePage() {
 
                 {/* RIGHT: Details */}
                 <div className="min-w-0">
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-4">
-                    <SignalRow
-                      label="Account age"
-                      value={data?.signals?.ageText ?? "—"}
-                      tier={ageTier.tier}
-                      note={ageTier.note}
-                      rightHint={ageTier.hint}
-                    />
+                  <div className="mt-5 rounded-xl border border-white/10 bg-black/20 px-4">
+                    {data?.signals?.ageText ? (
+                      <SignalRow
+                        label="Account age"
+                        value={data?.signals?.ageText ?? "—"}
+                        tier={ageTier.tier}
+                        note={ageTier.note}
+                        rightHint={ageTier.hint}
+                      />
+                    ) : null}
 
-                    <SignalRow
-                      label="Steam level"
-                      value={typeof data.steamLevel === "number" ? String(data.steamLevel) : "—"}
-                      tier={levelTier.tier}
-                      note={levelTier.note}
-                      rightHint={levelTier.hint}
-                    />
+                    {bans ? (
+                      <SignalRow
+                        label="Ban indicators"
+                        value={banDisplay.value}
+                        tier={bansTier.tier}
+                        note={bansTier.note}
+                        rightHint={banDisplay.hint}
+                      />
+                    ) : null}
 
-                    <SignalRow
-                      label={selectedGame ? `${selectedGame.name} hours` : "Selected game hours"}
-                      value={selectedHours ? `${selectedHours.hours} hrs` : "—"}
-                      tier={hoursTier.tier}
-                      note={hoursTier.note}
-                      rightHint={hoursTier.hint}
-                    />
+                    {selectedHours ? (
+                      <SignalRow
+                        label={`${selectedHours.name} hours`}
+                        value={`${selectedHours.hours} hrs`}
+                        tier={hoursTier.tier}
+                        note={hoursTier.note}
+                        rightHint={hoursTier.hint}
+                      />
+                    ) : null}
 
-                    <SignalRow
-                      label="Ban indicators"
-                      value={banDisplay.value}
-                      tier={bansTier.tier}
-                      note={bansTier.note}
-                      rightHint={banDisplay.hint}
-                    />
+                    {typeof data.gamesCount === "number" ? (
+                      <SignalRow
+                        label="Games owned"
+                        value={String(data.gamesCount)}
+                        tier={gamesTier.tier}
+                        note={gamesTier.note}
+                        rightHint={gamesTier.hint}
+                      />
+                    ) : null}
 
-                    <SignalRow
-                      label="Games owned"
-                      value={typeof data.gamesCount === "number" ? String(data.gamesCount) : "—"}
-                      tier={gamesTier.tier}
-                      note={gamesTier.note}
-                      rightHint={gamesTier.hint}
-                    />
+                    {typeof friendsCount === "number" ? (
+                      <SignalRow
+                        label="Friends"
+                        value={String(friendsCount)}
+                        tier={friendsTier.tier}
+                        note={friendsTier.note}
+                        rightHint={friendsTier.hint}
+                      />
+                    ) : null}
 
-                    {showPrivateHint ? (
-                      <div className="py-3 text-white/65">
-                        Profile details appear private/limited (some signals may be unavailable)
-                      </div>
+                    {typeof data.steamLevel === "number" ? (
+                      <SignalRow
+                        label="Steam level"
+                        value={String(data.steamLevel)}
+                        tier={levelTier.tier}
+                        note={levelTier.note}
+                        rightHint={levelTier.hint}
+                      />
                     ) : null}
                   </div>
 
@@ -582,7 +621,7 @@ export default function HomePage() {
 
                   <div className="mt-5 text-white/50 text-sm">
                     {data.disclaimer ||
-                      "Trust Score uses public Steam signals (account age, profile transparency, Steam level, optional game hours, and ban indicators). Not a cheat detector."}
+                      "Trust Score uses available Steam signals. Not a cheat detector."}
                   </div>
                 </div>
               </div>
@@ -598,30 +637,21 @@ export default function HomePage() {
                 Very old accounts get a large boost.
               </li>
               <li>
-                • <span className="font-semibold text-white/90">Steam level</span> adds confidence.
+                • <span className="font-semibold text-white/90">Ban indicators</span> are heavy negatives.
               </li>
               <li>
-                • <span className="font-semibold text-white/90">Transparency</span> helps: public
-                profile + public game details are positive signals.
+                • <span className="font-semibold text-white/90">Game library footprint</span> and{" "}
+                <span className="font-semibold text-white/90">friends count</span> can add confidence when available.
               </li>
               <li>
-                • <span className="font-semibold text-white/90">Ban indicators</span> are heavy
-                negatives (VAC/Game/Community/Economy).
-              </li>
-              <li>
-                • <span className="font-semibold text-white/90">Optional game hours</span> only
-                applies if you pick a game. Very low hours{" "}
-                <span className="font-semibold">0–10</span> are treated as a strong red flag;
-                <span className="font-semibold"> 10–20</span> is a mild flag;{" "}
-                <span className="font-semibold">20+</span> has little/no effect.
+                • <span className="font-semibold text-white/90">Optional game hours</span> only applies if you pick a game.
               </li>
             </ul>
           </div>
 
           {/* Footer */}
           <div className="mt-10 pb-6 text-white/40 text-sm">
-            V1.1 — Steam Profile Checker. Uses public Steam Web API signals and best-effort public
-            profile parsing.
+            V1.1 — Steam Profile Checker.
           </div>
         </div>
       </div>

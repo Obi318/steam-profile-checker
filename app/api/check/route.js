@@ -81,152 +81,42 @@ function regionFromCountryCode(cc) {
   if (!cc) return null;
   const c = String(cc).toUpperCase();
 
-  // Brazil as its own region
   if (c === "BR") return { code: "BR", label: "Brazil (BR)" };
 
-  // CIS (Russia, Ukraine, nearby states)
   const CIS = new Set(["RU", "UA", "BY", "KZ", "AM", "AZ", "GE", "MD", "KG", "TJ", "TM", "UZ"]);
   if (CIS.has(c)) return { code: "CIS", label: "CIS (Russia, Ukraine, nearby states)" };
 
-  // NA
   const NA = new Set(["US", "CA", "MX"]);
   if (NA.has(c)) return { code: "NA", label: "North America (NA)" };
 
-  // LATAM (excluding MX, BR handled above)
   const LATAM = new Set([
-    "AR",
-    "BO",
-    "CL",
-    "CO",
-    "CR",
-    "CU",
-    "DO",
-    "EC",
-    "SV",
-    "GT",
-    "HN",
-    "NI",
-    "PA",
-    "PY",
-    "PE",
-    "PR",
-    "UY",
-    "VE",
-    "GY",
-    "SR",
-    "BZ",
+    "AR","BO","CL","CO","CR","CU","DO","EC","SV","GT","HN","NI","PA","PY","PE","PR","UY","VE","GY","SR","BZ",
   ]);
   if (LATAM.has(c)) return { code: "LATAM", label: "Latin America (LATAM)" };
 
-  // MENA
   const MENA = new Set([
-    "AE",
-    "BH",
-    "DZ",
-    "EG",
-    "IL",
-    "IQ",
-    "IR",
-    "JO",
-    "KW",
-    "LB",
-    "LY",
-    "MA",
-    "OM",
-    "PS",
-    "QA",
-    "SA",
-    "SD",
-    "SY",
-    "TN",
-    "TR",
-    "YE",
+    "AE","BH","DZ","EG","IL","IQ","IR","JO","KW","LB","LY","MA","OM","PS","QA","SA","SD","SY","TN","TR","YE",
   ]);
   if (MENA.has(c)) return { code: "MENA", label: "Middle East & North Africa (MENA)" };
 
-  // EU (broad bucket; we’re not splitting EUW/EUNE in V1.1)
   const EU = new Set([
-    "AL",
-    "AD",
-    "AT",
-    "BA",
-    "BE",
-    "BG",
-    "BY",
-    "CH",
-    "CY",
-    "CZ",
-    "DE",
-    "DK",
-    "EE",
-    "ES",
-    "FI",
-    "FR",
-    "GB",
-    "GR",
-    "HR",
-    "HU",
-    "IE",
-    "IS",
-    "IT",
-    "LI",
-    "LT",
-    "LU",
-    "LV",
-    "MC",
-    "MD",
-    "ME",
-    "MK",
-    "MT",
-    "NL",
-    "NO",
-    "PL",
-    "PT",
-    "RO",
-    "RS",
-    "SE",
-    "SI",
-    "SK",
-    "SM",
-    "UA",
-    "VA",
+    "AL","AD","AT","BA","BE","BG","BY","CH","CY","CZ","DE","DK","EE","ES","FI","FR","GB","GR","HR","HU","IE",
+    "IS","IT","LI","LT","LU","LV","MC","MD","ME","MK","MT","NL","NO","PL","PT","RO","RS","SE","SI","SK","SM",
+    "UA","VA",
   ]);
-  // Note: UA is included above but CIS check happens first, so it’ll become CIS.
   if (EU.has(c)) return { code: "EU", label: "Europe (EU)" };
 
-  // East Asia (sometimes separate)
   const EAST_ASIA = new Set(["JP", "KR", "CN", "TW", "HK", "MO"]);
   if (EAST_ASIA.has(c)) return { code: "EA", label: "East Asia (EA)" };
 
-  // APAC (umbrella)
-  const APAC = new Set([
-    "AU",
-    "NZ",
-    "SG",
-    "PH",
-    "TH",
-    "VN",
-    "MY",
-    "ID",
-    "BN",
-    "KH",
-    "LA",
-    "MM",
-    "IN",
-    "PK",
-    "BD",
-    "LK",
-    "NP",
-    "MN",
-  ]);
+  const APAC = new Set(["AU","NZ","SG","PH","TH","VN","MY","ID","BN","KH","LA","MM","IN","PK","BD","LK","NP","MN"]);
   if (APAC.has(c)) return { code: "APAC", label: "Asia-Pacific (APAC)" };
 
-  // If unknown, return null (don’t show)
   return null;
 }
 
 /* -----------------------------
-   Trust score model (V1.1)
+   Trust score model
 ------------------------------ */
 
 function computeAgeSignals(createdAt) {
@@ -246,9 +136,9 @@ function computeAgeSignals(createdAt) {
         : `${ageDays} day${ageDays === 1 ? "" : "s"} old`;
   }
 
-  // Age points: 0–60 (dominant)
+  // Age points: 0–62 (dominant anchor)
   let agePoints = 0;
-  if (ageDays >= 3650) agePoints = 62; // 10+ years (elite anchor)
+  if (ageDays >= 3650) agePoints = 62; // 10+ years
   else if (ageDays >= 1825) agePoints = 50; // 5–10
   else if (ageDays >= 730) agePoints = 38; // 2–5
   else if (ageDays >= 180) agePoints = 22; // 6–24mo
@@ -259,50 +149,51 @@ function computeAgeSignals(createdAt) {
 }
 
 function levelPoints(steamLevel) {
-  // 0–18 (nice-to-have, not dominant)
+  // 0–9 (light signal)
   if (typeof steamLevel !== "number") return 0;
-  if (steamLevel >= 50) return 18;
-  if (steamLevel >= 25) return 15;
-  if (steamLevel >= 10) return 8;
-  if (steamLevel >= 1) return 3;
+  if (steamLevel >= 50) return 9;
+  if (steamLevel >= 25) return 7;
+  if (steamLevel >= 10) return 4;
+  if (steamLevel >= 1) return 2;
   return 0;
 }
 
-function transparencyPoints({ isProfilePublic, gamesCount }) {
-  // 0–15
-  let pts = 0;
-  if (isProfilePublic === true) pts += 6;
+function friendsPoints(friendsCount) {
+  // 0–9 (social footprint)
+  if (typeof friendsCount !== "number") return 0;
+  if (friendsCount >= 200) return 9;
+  if (friendsCount >= 50) return 6;
+  if (friendsCount >= 10) return 3;
+  if (friendsCount >= 1) return 1;
+  return 0;
+}
 
-  // “gamesCount available” = transparency signal
-  if (typeof gamesCount === "number") pts += 9;
-
-  return pts;
+function gamesOwnedPoints(gamesCount) {
+  // 0–10 (library footprint)
+  if (typeof gamesCount !== "number") return 0;
+  if (gamesCount >= 200) return 10;
+  if (gamesCount >= 50) return 7;
+  if (gamesCount >= 10) return 4;
+  if (gamesCount >= 4) return 2;
+  return 0;
 }
 
 function vacPenalty(vacCount, daysSinceLastBan) {
   if (!vacCount || vacCount <= 0) return 0;
 
-  // Time-decayed penalty: recent bans matter a lot more than old history.
-  // Floors at a small penalty even if the ban was a long time ago.
-  // daysSinceLastBan comes from Steam GetPlayerBans.
   const d = typeof daysSinceLastBan === "number" ? daysSinceLastBan : null;
-
-  // Defaults if unknown recency
   let base = -18;
 
   if (d !== null) {
-    if (d < 365) base = -35; // < 1y
-    else if (d < 730) base = -30; // 1–2y
-    else if (d < 1460) base = -24; // 2–4y
-    else if (d < 2555) base = -16; // 4–7y
-    else if (d < 3650) base = -10; // 7–10y
-    else base = -5; // 10y+
+    if (d < 365) base = -35;
+    else if (d < 730) base = -30;
+    else if (d < 1460) base = -24;
+    else if (d < 2555) base = -16;
+    else if (d < 3650) base = -10;
+    else base = -5;
   }
 
-  // Multiple VAC bans are a heavier indicator than a one-off.
-  // Each additional ban adds extra penalty, capped.
   const extra = Math.min(Math.max(vacCount - 1, 0) * 6, 18);
-
   return clamp(base - extra, -60, 0);
 }
 
@@ -311,7 +202,6 @@ function gameBanPenalty(gameBanCount, daysSinceLastBan) {
 
   const d = typeof daysSinceLastBan === "number" ? daysSinceLastBan : null;
 
-  // Slightly lighter than VAC, but still meaningful.
   let base = -14;
   if (d !== null) {
     if (d < 365) base = -24;
@@ -327,7 +217,6 @@ function gameBanPenalty(gameBanCount, daysSinceLastBan) {
 }
 
 function banPenalty(bans) {
-  // 0 to -70
   if (!bans) return 0;
 
   const vacCount = bans.NumberOfVACBans ?? 0;
@@ -335,7 +224,6 @@ function banPenalty(bans) {
   const days = typeof bans.DaysSinceLastBan === "number" ? bans.DaysSinceLastBan : null;
 
   let pen = 0;
-
   pen += vacPenalty(vacCount, days);
   pen += gameBanPenalty(gameCount, days);
 
@@ -345,9 +233,7 @@ function banPenalty(bans) {
   return clamp(pen, -70, 0);
 }
 
-
 function banImpactLabel(penalty) {
-  // penalty is negative (or 0). Return a human-friendly impact label.
   if (typeof penalty !== "number" || penalty >= 0) return "None";
   if (penalty <= -30) return "Severe impact";
   if (penalty <= -20) return "High impact";
@@ -362,8 +248,7 @@ function banMeta(bans, penalty) {
   const game = bans.NumberOfGameBans ?? 0;
   const community = !!bans.CommunityBanned;
   const economy = bans.EconomyBan ?? "none";
-  const days =
-    typeof bans.DaysSinceLastBan === "number" ? bans.DaysSinceLastBan : null;
+  const days = typeof bans.DaysSinceLastBan === "number" ? bans.DaysSinceLastBan : null;
 
   let approxDateISO = null;
   let approxYear = null;
@@ -374,8 +259,7 @@ function banMeta(bans, penalty) {
     approxYear = dt.getFullYear();
   }
 
-  const hasAny =
-    vac > 0 || game > 0 || community || (economy && economy !== "none");
+  const hasAny = vac > 0 || game > 0 || community || (economy && economy !== "none");
 
   return {
     hasAny,
@@ -391,16 +275,12 @@ function banMeta(bans, penalty) {
   };
 }
 
-
 function gameHoursAdjustment(hours) {
-  // Only used when user picks a game AND hours is known
-  // Strongly penalize 0–10; mild penalty 10–20; 20+ no effect
   if (typeof hours !== "number") return 0;
-
-  if (hours < 5) return -18; // prime sus
-  if (hours < 10) return -12; // still sus
-  if (hours < 20) return -6; // mild flag
-  return 0; // 20+ no effect
+  if (hours < 5) return -18;
+  if (hours < 10) return -12;
+  if (hours < 20) return -6;
+  return 0;
 }
 
 function verdictFromScore(score) {
@@ -412,22 +292,19 @@ function verdictFromScore(score) {
   return "HIGH RISK";
 }
 
-function buildExplanation({
-  verdict,
+function buildScoreSummary({
   trustLevel,
-  ageText,
-  steamLevel,
+  verdict,
+  ageYears,
   bans,
   gamesCount,
-  isProfilePublic,
+  friendsCount,
   selectedGameName,
   selectedGameHours,
-  gameAdj,
 }) {
-  const parts = [];
-
-  if (ageText) parts.push(`a ${ageText} account`);
-  if (typeof steamLevel === "number") parts.push(`Steam level (${steamLevel})`);
+  if (trustLevel == null || verdict === "UNKNOWN") {
+    return "Profile is locked down; not enough public signals to score. Proceed with caution.";
+  }
 
   const hasAnyBan =
     bans &&
@@ -436,94 +313,116 @@ function buildExplanation({
       bans.CommunityBanned ||
       (bans.EconomyBan && bans.EconomyBan !== "none"));
 
-  if (bans) parts.push(hasAnyBan ? "visible ban indicators" : "no visible bans");
+  const reasons = [];
 
-  if (typeof gamesCount !== "number") {
-    if (isProfilePublic === false) parts.push("private/limited game details");
+  if (typeof ageYears === "number") {
+    if (ageYears >= 10) reasons.push("older account");
+    else if (ageYears >= 5) reasons.push("established account age");
+    else if (ageYears >= 2) reasons.push("some account history");
+    else reasons.push("young account");
+  }
+
+  if (bans) {
+    reasons.push(hasAnyBan ? "ban history present" : "clean ban history");
   }
 
   if (selectedGameName && typeof selectedGameHours === "number") {
-    parts.push(`${selectedGameHours} hrs in ${selectedGameName}${gameAdj < 0 ? " (low playtime)" : ""}`);
+    if (selectedGameHours < 10) reasons.push(`very low ${selectedGameName} hours`);
+    else if (selectedGameHours < 20) reasons.push(`low ${selectedGameName} hours`);
+    else if (selectedGameHours >= 100) reasons.push(`strong ${selectedGameName} playtime`);
+    else reasons.push(`solid ${selectedGameName} playtime`);
   }
 
-  const core = parts.length ? parts.join(", ") : "limited public signals";
-  return `This profile shows ${verdict === "HIGH RISK" || verdict === "SUSPECT" ? "risk" : "legitimacy"} signals — ${core}. Trust Score: ${trustLevel}/100.`;
+  if (typeof gamesCount === "number") {
+    if (gamesCount >= 100) reasons.push("real game library");
+    else if (gamesCount <= 3) reasons.push("tiny library");
+    else reasons.push("some library footprint");
+  }
+
+  if (typeof friendsCount === "number") {
+    if (friendsCount >= 50) reasons.push("social footprint");
+    else if (friendsCount === 0) reasons.push("no visible friends");
+  }
+
+  const tone = trustLevel >= 70 ? "pos" : trustLevel >= 50 ? "mid" : "neg";
+  const maxReasons = tone === "pos" ? 3 : 2;
+  const picked = reasons.filter(Boolean).slice(0, maxReasons);
+
+  if (!picked.length) return "Trust score is based on the available public signals.";
+
+  if (tone === "neg") return `Several risk signals: ${picked.join(", ")}.`;
+  if (tone === "mid") return `Mixed signals: ${picked.join(", ")}.`;
+  return `Strong signals: ${picked.join(", ")}.`;
 }
 
-function buildScoreSummary({
-  signals,
+function calcTrust({
+  createdAt,
   steamLevel,
   gamesCount,
+  friendsCount,
   bans,
   selectedGameName,
   selectedGameHours,
 }) {
-  const bits = [];
-
-  if (signals?.ageText) bits.push("Account age: " + signals.ageText);
-  if (typeof steamLevel === "number") bits.push("Steam level: " + steamLevel);
-
-  if (selectedGameName) {
-    if (typeof selectedGameHours === "number") {
-      bits.push(selectedGameName + " hours: " + selectedGameHours);
-    } else {
-      bits.push(selectedGameName + " hours: unavailable");
-    }
-  }
-
-  if (bans) {
-    const vac = bans.NumberOfVACBans ?? 0;
-    const game = bans.NumberOfGameBans ?? 0;
-    const hasAny =
-      vac > 0 ||
-      game > 0 ||
-      !!bans.CommunityBanned ||
-      (bans.EconomyBan && bans.EconomyBan !== "none");
-
-    if (!hasAny) {
-      bits.push("Ban indicators: none");
-    } else {
-      const days = typeof bans.DaysSinceLastBan === "number" ? bans.DaysSinceLastBan : null;
-      const approx = days !== null ? new Date(Date.now() - days * 86400000).getFullYear() : null;
-      bits.push(
-        "Ban indicators: VAC " +
-          vac +
-          ", Game " +
-          game +
-          (approx ? `, last ban ~${approx}` : "")
-      );
-    }
-  }
-
-  if (typeof gamesCount === "number") bits.push("Games owned: " + gamesCount);
-
-  return bits.length
-    ? "Score breakdown — " + bits.join(" • ") + "."
-    : "Score breakdown is limited by available public signals.";
-}
-
-
-function calcTrust({ createdAt, isProfilePublic, steamLevel, gamesCount, bans, selectedGameName, selectedGameHours }) {
   const age = computeAgeSignals(createdAt);
-  const lvlPts = levelPoints(steamLevel);
-  const trPts = transparencyPoints({ isProfilePublic, gamesCount });
-  const banPen = banPenalty(bans);
 
+  const lvlPts = levelPoints(steamLevel);
+  const frPts = friendsPoints(friendsCount);
+  const libPts = gamesOwnedPoints(gamesCount);
+
+  const banPen = banPenalty(bans);
   const gameAdj = selectedGameName ? gameHoursAdjustment(selectedGameHours) : 0;
+
+  const hasAnyBan =
+    bans &&
+    ((bans.NumberOfVACBans ?? 0) > 0 ||
+      (bans.NumberOfGameBans ?? 0) > 0 ||
+      bans.CommunityBanned ||
+      (bans.EconomyBan && bans.EconomyBan !== "none"));
+
+  let evidence = 0;
+  if (typeof age.ageDays === "number") evidence += 1;
+  if (typeof steamLevel === "number") evidence += 1;
+  if (typeof gamesCount === "number") evidence += 1;
+  if (typeof friendsCount === "number") evidence += 1;
+  if (selectedGameName && typeof selectedGameHours === "number") evidence += 1;
+
+  const limitedSignals = evidence === 0;
 
   const veteranBonus =
     typeof age.ageDays === "number" &&
     age.ageDays >= 3650 &&
-    typeof steamLevel === "number" &&
-    steamLevel >= 20 &&
-    bans &&
-    bans.NumberOfVACBans === 0 &&
-    bans.NumberOfGameBans === 0 &&
-    bans.CommunityBanned === false
-      ? 8
+    (banPen === 0 || banPen === -0) &&
+    typeof gamesCount === "number" &&
+    gamesCount >= 20
+      ? 5
       : 0;
 
-  let score = age.agePoints + lvlPts + trPts + banPen + gameAdj + veteranBonus;
+  if (limitedSignals && !hasAnyBan) {
+    return {
+      trustLevel: null,
+      verdict: "UNKNOWN",
+      signals: {
+        ageText: age.ageText,
+        ageYears: age.ageYears,
+        ageDays: age.ageDays,
+        friendsCount: typeof friendsCount === "number" ? friendsCount : null,
+        points: {
+          age: age.agePoints,
+          banPenalty: banPen,
+          gameHoursAdj: gameAdj,
+          gamesOwned: libPts,
+          friends: frPts,
+          level: lvlPts,
+          veteranBonus: 0,
+        },
+        ban: banMeta(bans, banPen),
+      },
+      gameAdj,
+    };
+  }
+
+  let score = age.agePoints + lvlPts + frPts + libPts + banPen + gameAdj + veteranBonus;
   score = clamp(score, 0, 100);
 
   const verdict = verdictFromScore(score);
@@ -535,21 +434,21 @@ function calcTrust({ createdAt, isProfilePublic, steamLevel, gamesCount, bans, s
       ageText: age.ageText,
       ageYears: age.ageYears,
       ageDays: age.ageDays,
+      friendsCount: typeof friendsCount === "number" ? friendsCount : null,
       points: {
         age: age.agePoints,
-        level: lvlPts,
-        transparency: trPts,
         banPenalty: banPen,
         gameHoursAdj: gameAdj,
+        gamesOwned: libPts,
+        friends: frPts,
+        level: lvlPts,
         veteranBonus,
       },
-    
       ban: banMeta(bans, banPen),
-},
+    },
     gameAdj,
   };
 }
-
 
 /* -----------------------------
    Social links (Twitch/YouTube/X/Kick only)
@@ -576,7 +475,7 @@ function labelForHost(hostname) {
   if (h.includes("youtube.com") || h.includes("youtu.be")) return "YouTube";
   if (h.includes("twitter.com") || h.includes("x.com")) return "X";
   if (h.includes("kick.com")) return "Kick";
-  return null; // only allow the 4
+  return null;
 }
 
 function uniqByUrl(arr) {
@@ -610,7 +509,6 @@ function extractSocialLinksFromText(text) {
 
   const hits = [];
 
-  // URLs with scheme
   const urlRegex = /\b(https?:\/\/[^\s<>"']+)\b/gi;
   let m;
   while ((m = urlRegex.exec(text))) {
@@ -618,7 +516,6 @@ function extractSocialLinksFromText(text) {
     if (n) hits.push(n);
   }
 
-  // common bare patterns without scheme
   const bareRegex =
     /\b(twitch\.tv\/[^\s<>"']+|youtube\.com\/[^\s<>"']+|youtu\.be\/[^\s<>"']+|twitter\.com\/[^\s<>"']+|x\.com\/[^\s<>"']+|kick\.com\/[^\s<>"']+)\b/gi;
 
@@ -708,16 +605,11 @@ export async function POST(req) {
     const isProfilePublic = player ? player.communityvisibilitystate === 3 : null;
     const createdAt = player?.timecreated ? new Date(player.timecreated * 1000).toISOString() : null;
 
-    // Region
     const locCountryCode = player?.loccountrycode ?? null;
     const region = regionFromCountryCode(locCountryCode);
 
-    // “Currently playing” (Steam can expose this when in-game)
     const currentlyPlaying = player?.gameextrainfo
-      ? {
-          name: player.gameextrainfo,
-          appid: player?.gameid ? Number(player.gameid) : null,
-        }
+      ? { name: player.gameextrainfo, appid: player?.gameid ? Number(player.gameid) : null }
       : null;
 
     // 2) Steam level
@@ -737,7 +629,6 @@ export async function POST(req) {
     let selectedGameHours = null;
 
     try {
-      // If we need hours, include appinfo list so we can locate the game by appid
       const includeAppInfo = !!selectedAppId;
       const gamesUrl =
         `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?` +
@@ -751,12 +642,25 @@ export async function POST(req) {
         const appidNum = Number(selectedAppId);
         const found = gamesJ.response.games.find((g) => Number(g.appid) === appidNum);
         if (found && typeof found.playtime_forever === "number") {
-          selectedGameHours = Math.round((found.playtime_forever / 60) * 10) / 10; // 0.1h precision
+          selectedGameHours = Math.round((found.playtime_forever / 60) * 10) / 10;
         }
       }
     } catch {
       gamesCount = null;
       selectedGameHours = null;
+    }
+
+    // 3b) Friends count (best-effort; only works if friends list is public)
+    let friendsCount = null;
+    try {
+      const friendsUrl =
+        `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?` +
+        `key=${key}&steamid=${steamid}&relationship=friend`;
+      const friendsJ = await steamFetchJson(friendsUrl);
+      const friends = friendsJ?.friendslist?.friends;
+      if (Array.isArray(friends)) friendsCount = friends.length;
+    } catch {
+      friendsCount = null;
     }
 
     // 4) Bans
@@ -771,6 +675,31 @@ export async function POST(req) {
       bans = null;
     }
 
+    // Profile "openness" (display-only; does NOT affect Trust Score)
+    let openness = "Private";
+    if (isProfilePublic === false) {
+      openness = "Private";
+    } else if (isProfilePublic === true) {
+      let possible = 0;
+      let available = 0;
+
+      possible += 1; if (createdAt) available += 1;
+      possible += 1; if (bans) available += 1;
+      possible += 1; if (typeof steamLevel === "number") available += 1;
+      possible += 1; if (typeof gamesCount === "number") available += 1;
+      possible += 1; if (typeof friendsCount === "number") available += 1;
+
+      if (selectedAppId) {
+        possible += 1;
+        if (typeof selectedGameHours === "number") available += 1;
+      }
+
+      const ratio = possible ? available / possible : 0;
+      if (ratio >= 0.75) openness = "Open";
+      else if (ratio >= 0.25) openness = "Semi-Open";
+      else openness = "Private";
+    }
+
     // 5) Social links (best-effort)
     let socialLinks = [];
     try {
@@ -778,39 +707,23 @@ export async function POST(req) {
       const summaryText = extractProfileSummaryText(html);
       socialLinks = extractSocialLinksFromText(summaryText);
 
-      // fallback: scan entire html if summary was empty
       if (!socialLinks.length && html) {
         socialLinks = extractSocialLinksFromText(html);
       }
 
-      // Only keep 1 link per platform (Twitch / X / YouTube / Kick) and cap at 4
       socialLinks = uniqByLabel(socialLinks).slice(0, 4);
     } catch {
       socialLinks = [];
     }
 
-    // Trust score
     const { trustLevel, verdict, signals, gameAdj } = calcTrust({
       createdAt,
-      isProfilePublic,
       steamLevel,
       gamesCount,
+      friendsCount,
       bans,
       selectedGameName,
       selectedGameHours,
-    });
-
-    const explanation = buildExplanation({
-      verdict,
-      trustLevel,
-      ageText: signals?.ageText,
-      steamLevel,
-      bans,
-      gamesCount,
-      isProfilePublic,
-      selectedGameName,
-      selectedGameHours,
-      gameAdj,
     });
 
     return NextResponse.json({
@@ -820,10 +733,12 @@ export async function POST(req) {
       avatar,
 
       isProfilePublic,
+      openness,
 
       createdAt,
       steamLevel,
       gamesCount,
+      friendsCount,
       bans,
 
       region,
@@ -842,12 +757,20 @@ export async function POST(req) {
 
       trustLevel,
       verdict,
-      explanation,
-      scoreSummary: buildScoreSummary({ signals, steamLevel, gamesCount, bans, selectedGameName, selectedGameHours }),
+      scoreSummary: buildScoreSummary({
+        trustLevel,
+        verdict,
+        ageYears: signals?.ageYears ?? null,
+        bans,
+        gamesCount,
+        friendsCount,
+        selectedGameName,
+        selectedGameHours,
+      }),
       signals,
 
       disclaimer:
-        "Trust Score is a quick snapshot using public Steam signals (age, profile visibility, Steam level, bans, and optional game hours). Not a cheat detector.",
+        "Trust Score is a quick snapshot using available Steam signals (account age, ban indicators, game library footprint, friends count, Steam level, and optional game hours). Not a cheat detector.",
     });
   } catch (e) {
     return asJsonError(e?.message || "Unknown error", 400);
