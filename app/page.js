@@ -360,9 +360,11 @@ export default function HomePage() {
           {/* Input */}
           <div className="mb-3">
             <label className="block text-sm text-white/80 mb-2">Enter a Steam profile URL</label>
-            <div className="flex gap-3">
+
+            {/* ✅ MOBILE FIX: stack on small screens, row on sm+ */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
-                className="flex-1 rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-white placeholder:text-white/30 outline-none focus:border-white/30"
+                className="w-full min-w-0 rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-white placeholder:text-white/30 outline-none focus:border-white/30"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={DEFAULT_PROFILE_URL}
@@ -370,7 +372,7 @@ export default function HomePage() {
               <button
                 onClick={onCheck}
                 disabled={loading}
-                className="rounded-xl px-5 py-2.5 bg-white/10 border border-white/15 hover:bg-white/15 disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl px-5 py-2.5 bg-white/10 border border-white/15 hover:bg-white/15 disabled:opacity-50"
               >
                 {loading ? "Checking..." : "Check"}
               </button>
