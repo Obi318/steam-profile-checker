@@ -87,9 +87,9 @@ function Tag({ tier, children }) {
 
 function SignalRow({ label, value, tier, note, rightHint }) {
   return (
-    <div className="py-2 border-b border-white/10 last:border-b-0">
+    <div className="py-1.5 sm:py-2 border-b border-white/10 last:border-b-0">
       <div className="flex items-center justify-between gap-4">
-        <div className="text-white/90 font-medium">{label}</div>
+        <div className="text-white/90 font-medium text-sm sm:text-base">{label}</div>
         <div className="text-white font-semibold">{value}</div>
       </div>
       <div className="mt-2 flex items-center justify-between gap-4">
@@ -333,13 +333,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white">
       <div className="mx-auto max-w-5xl px-4 py-6">
         {/* Unified sunken container (Option 2) */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           {/* Header: remove the inner border around title/tagline */}
           <div className="pb-5 mb-5">
             <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
               <div className="flex items-start gap-4">
                 <div className="min-w-0">
-                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-none">
                     Steam Profile Checker
                   </h1>
                   <div className="mt-2 text-sm text-white/60">
@@ -360,8 +360,6 @@ export default function HomePage() {
           {/* Input */}
           <div className="mb-3">
             <label className="block text-sm text-white/80 mb-2">Enter a Steam profile URL</label>
-
-            {/* ✅ MOBILE FIX: stack on small screens, row on sm+ */}
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 className="w-full min-w-0 rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-white placeholder:text-white/30 outline-none focus:border-white/30"
@@ -411,7 +409,7 @@ export default function HomePage() {
 
           {/* Results */}
           {data ? (
-            <div className="rounded-2xl border border-white/12 bg-white/5 p-5">
+            <div className="rounded-2xl border border-white/12 bg-white/5 p-4 sm:p-5">
               <div className="flex items-start gap-5">
                 <img
                   src={data.avatar || ""}
@@ -419,7 +417,7 @@ export default function HomePage() {
                   className="h-16 w-16 rounded-xl border border-white/10 object-cover"
                 />
                 <div className="flex-1">
-                  <div className="text-4xl md:text-5xl font-extrabold leading-none">
+                  <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold leading-none">
                     {data.personaName || "Unknown"}
                   </div>
 
@@ -489,11 +487,11 @@ export default function HomePage() {
                     "Score is based on account age, Steam level, library size, ban indicators, and (optionally) hours in the selected game."}
                 </div>
 
-                <div className="mt-5 flex items-center gap-4">
+                <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                   <div className="text-2xl font-extrabold">
                     Trust Score: {data.trustLevel} / 100
                   </div>
-                  <div className="flex-1 max-w-xl h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
+                  <div className="w-full sm:flex-1 sm:max-w-xl h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
                     <div
                       className={`h-full ${scoreBarColorClass(scorePct)}`}
                       style={{ width: `${scorePct}%` }}
@@ -581,7 +579,7 @@ export default function HomePage() {
           {/* Explainer */}
           <div className="mt-10 border-t border-white/10 pt-8">
             <h2 className="text-2xl font-extrabold mb-3">How our Trust Score works</h2>
-            <ul className="space-y-2 text-white/80 text-base">
+            <ul className="space-y-2 text-white/80 text-sm sm:text-base">
               <li>
                 • <span className="font-semibold text-white/90">Account age is the #1 factor.</span>{" "}
                 Very old accounts get a large boost.
