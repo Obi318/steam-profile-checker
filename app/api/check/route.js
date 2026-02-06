@@ -203,12 +203,13 @@ function computeAgeSignals(createdAt) {
 }
 
 function levelPoints(steamLevel) {
-  // 0–9 (light signal)
+  // 0-5 (very light signal; easy to inflate via trading cards/badges)
   if (typeof steamLevel !== "number") return 0;
-  if (steamLevel >= 50) return 9;
-  if (steamLevel >= 25) return 7;
-  if (steamLevel >= 10) return 4;
-  if (steamLevel >= 1) return 2;
+  if (steamLevel >= 100) return 5;
+  if (steamLevel >= 50) return 4;
+  if (steamLevel >= 25) return 3;
+  if (steamLevel >= 10) return 2;
+  if (steamLevel >= 1) return 1;
   return 0;
 }
 
@@ -486,6 +487,15 @@ function calcTrust({
       ? 5
       : 0;
 
+  const establishedBonus =
+    cleanBans &&
+    typeof gamesCount === "number" &&
+    gamesCount >= 20 &&
+    typeof age.ageDays === "number" &&
+    age.ageDays >= 1825
+      ? 5
+      : 0;
+
   if (limitedSignals && !hasAnyBan) {
     return {
       trustLevel: null,
@@ -503,6 +513,7 @@ function calcTrust({
           gamesOwned: libPts,
           friends: frPts,
           level: lvlPts,
+          establishedBonus: 0,
           veteranBonus: 0,
         },
         ban: banMeta(bans, banPen),
@@ -512,7 +523,15 @@ function calcTrust({
   }
 
   let score =
-    age.agePoints + lvlPts + frPts + libPts + banPen + gameAdj + cleanBansBonus + veteranBonus;
+    age.agePoints +
+    lvlPts +
+    frPts +
+    libPts +
+    banPen +
+    gameAdj +
+    cleanBansBonus +
+    establishedBonus +
+    veteranBonus;
   score = clamp(score, 0, 100);
 
   const verdict = verdictFromScore(score);
@@ -533,6 +552,7 @@ function calcTrust({
         gamesOwned: libPts,
         friends: frPts,
         level: lvlPts,
+        establishedBonus,
         veteranBonus,
       },
       ban: banMeta(bans, banPen),
