@@ -205,11 +205,10 @@ function computeAgeSignals(createdAt) {
 function levelPoints(steamLevel) {
   // 0-5 (very light signal; easy to inflate via trading cards/badges)
   if (typeof steamLevel !== "number") return 0;
-  if (steamLevel >= 100) return 5;
-  if (steamLevel >= 50) return 4;
-  if (steamLevel >= 25) return 3;
-  if (steamLevel >= 10) return 2;
-  if (steamLevel >= 1) return 1;
+  if (steamLevel >= 100) return 4;
+  if (steamLevel >= 50) return 3;
+  if (steamLevel >= 25) return 2;
+  if (steamLevel >= 10) return 1;
   return 0;
 }
 
@@ -493,7 +492,7 @@ function calcTrust({
     gamesCount >= 20 &&
     typeof age.ageDays === "number" &&
     age.ageDays >= 1825
-      ? 5
+      ? 16
       : 0;
 
   if (limitedSignals && !hasAnyBan) {
