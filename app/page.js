@@ -189,6 +189,34 @@ function tierForBans(bans, economyRelevant) {
   return { tier: "neutral", note: "Very old ban (10y+)", hint: "Near-zero impact" };
 }
 
+const FAQ_ITEMS = [
+  {
+    question: "What is a Steam trust score?",
+    answer:
+      "It is a quick snapshot score based on public Steam signals like account age, ban indicators, library footprint, friends count, Steam level, and optional game hours.",
+  },
+  {
+    question: "Does this check VAC bans?",
+    answer:
+      "Yes. If ban data is visible from Steam, VAC and game ban indicators are included in the score model and shown in the ban row.",
+  },
+  {
+    question: "What can I paste into the checker?",
+    answer:
+      "You can paste a Steam profile URL, a vanity name, or a 17-digit SteamID64.",
+  },
+  {
+    question: "Is this an official Steam tool?",
+    answer:
+      "No. It is an independent utility that reads public Steam data and summarizes it. It is not an anti-cheat detector.",
+  },
+  {
+    question: "Why can a profile score lower even with no bans?",
+    answer:
+      "Missing public signals like private friends or game library visibility can reduce confidence, so scores may stay moderate even without ban history.",
+  },
+];
+
 export default function HomePage() {
   const DEFAULT_PROFILE_URL = "https://steamcommunity.com/id/C9shroud/";
 
@@ -404,6 +432,18 @@ export default function HomePage() {
   const openness = data?.openness ?? null;
 
   const scoreSummary = data?.scoreSummary ?? null;
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
 
   const ageTier = tierForAccountAgeDays(data?.signals?.ageDays ?? null);
   const levelTier = tierForSteamLevel(data?.steamLevel);
@@ -800,12 +840,29 @@ export default function HomePage() {
             </ul>
           </div>
 
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <h2 className="text-xl font-extrabold mb-3">FAQ</h2>
+            <div className="space-y-4">
+              {FAQ_ITEMS.map((item) => (
+                <div key={item.question} className="rounded-xl border border-white/10 bg-black/20 p-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-white">{item.question}</h3>
+                  <p className="mt-1 text-sm sm:text-base text-white/75">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Footer */}
           <div className="mt-8 pb-5 text-white/40 text-xs">
             V1.1 — Steam Profile Checker.
           </div>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          />
         </div>
       </div>
     </main>
   );
 }
+
