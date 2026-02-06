@@ -176,17 +176,17 @@ function tierForBans(bans, economyRelevant) {
 
   if (totalCore >= 2) {
     if (days === null) return { tier: "bad", note: "Multiple bans", hint: "High impact" };
-    if (days < 365) return { tier: "bad", note: "Multiple bans (recent)", hint: "Severe impact" };
-    if (days < 1460) return { tier: "bad", note: "Multiple bans (last 4y)", hint: "High impact" };
-    return { tier: "bad", note: "Multiple bans (older)", hint: "Moderate impact" };
+    if (days < 730) return { tier: "bad", note: "Multiple bans (last 2y)", hint: "Severe impact" };
+    if (days < 1825) return { tier: "bad", note: "Multiple bans (2-5y)", hint: "High impact" };
+    if (days < 3650) return { tier: "warn", note: "Multiple bans (5-10y)", hint: "Moderate impact" };
+    return { tier: "warn", note: "Multiple bans (10y+)", hint: "Low impact" };
   }
 
   if (days === null) return { tier: "warn", note: "Ban history", hint: "Unknown recency" };
-  if (days < 365) return { tier: "bad", note: "Recent ban (<1y)", hint: "Severe impact" };
   if (days < 730) return { tier: "bad", note: "Ban in last 2y", hint: "High impact" };
-  if (days < 1460) return { tier: "bad", note: "Ban in last 4y", hint: "High impact" };
-  if (days < 3650) return { tier: "warn", note: "Old ban", hint: "Moderate impact" };
-  return { tier: "warn", note: "Very old ban", hint: "Low impact" };
+  if (days < 1825) return { tier: "warn", note: "Ban 2-5y ago", hint: "Moderate impact" };
+  if (days < 3650) return { tier: "warn", note: "Old ban (5-10y)", hint: "Low impact" };
+  return { tier: "neutral", note: "Very old ban (10y+)", hint: "Near-zero impact" };
 }
 
 export default function HomePage() {
@@ -447,11 +447,11 @@ export default function HomePage() {
 
     let why = "";
     if (impact && impact !== "None") {
-      if (impact === "High") {
+      if (/Severe|High/i.test(impact)) {
         why = approxYear
           ? `Recent ban activity (last ~${approxYear}) significantly reduces trust.`
           : "Recent ban activity significantly reduces trust.";
-      } else if (impact === "Medium") {
+      } else if (/Moderate/i.test(impact)) {
         why = approxYear
           ? `Older ban activity (last ~${approxYear}) reduces trust, but less than a recent ban.`
           : "Older ban activity reduces trust, but less than a recent ban.";

@@ -236,18 +236,36 @@ function vacPenalty(vacCount, daysSinceLastBan) {
   if (!vacCount || vacCount <= 0) return 0;
 
   const d = typeof daysSinceLastBan === "number" ? daysSinceLastBan : null;
-  let base = -18;
+  // Ban decay model (days since last ban):
+  // 0-2y: highest negative
+  // 2-5y: moderate
+  // 5-10y: low
+  // 10y+: near-zero (still stated in output)
+  let base = -22; // fallback if recency is unknown
+  let perExtra = 5;
+  let extraCap = 18;
 
   if (d !== null) {
-    if (d < 365) base = -35;
-    else if (d < 730) base = -30;
-    else if (d < 1460) base = -24;
-    else if (d < 2555) base = -16;
-    else if (d < 3650) base = -10;
-    else base = -5;
+    if (d < 730) {
+      base = -40;
+      perExtra = 8;
+      extraCap = 24;
+    } else if (d < 1825) {
+      base = -22;
+      perExtra = 5;
+      extraCap = 18;
+    } else if (d < 3650) {
+      base = -10;
+      perExtra = 3;
+      extraCap = 12;
+    } else {
+      base = -1;
+      perExtra = 1;
+      extraCap = 6;
+    }
   }
 
-  const extra = Math.min(Math.max(vacCount - 1, 0) * 6, 18);
+  const extra = Math.min(Math.max(vacCount - 1, 0) * perExtra, extraCap);
   return clamp(base - extra, -60, 0);
 }
 
@@ -255,18 +273,31 @@ function gameBanPenalty(gameBanCount, daysSinceLastBan) {
   if (!gameBanCount || gameBanCount <= 0) return 0;
 
   const d = typeof daysSinceLastBan === "number" ? daysSinceLastBan : null;
+  let base = -16; // fallback if recency is unknown
+  let perExtra = 4;
+  let extraCap = 12;
 
-  let base = -14;
   if (d !== null) {
-    if (d < 365) base = -24;
-    else if (d < 730) base = -20;
-    else if (d < 1460) base = -16;
-    else if (d < 2555) base = -12;
-    else if (d < 3650) base = -8;
-    else base = -4;
+    if (d < 730) {
+      base = -28;
+      perExtra = 6;
+      extraCap = 18;
+    } else if (d < 1825) {
+      base = -16;
+      perExtra = 4;
+      extraCap = 12;
+    } else if (d < 3650) {
+      base = -7;
+      perExtra = 2;
+      extraCap = 8;
+    } else {
+      base = -1;
+      perExtra = 1;
+      extraCap = 4;
+    }
   }
 
-  const extra = Math.min(Math.max(gameBanCount - 1, 0) * 4, 12);
+  const extra = Math.min(Math.max(gameBanCount - 1, 0) * perExtra, extraCap);
   return clamp(base - extra, -45, 0);
 }
 
@@ -289,9 +320,9 @@ function banPenalty(bans) {
 
 function banImpactLabel(penalty) {
   if (typeof penalty !== "number" || penalty >= 0) return "None";
-  if (penalty <= -30) return "Severe impact";
-  if (penalty <= -20) return "High impact";
-  if (penalty <= -10) return "Moderate impact";
+  if (penalty <= -25) return "Severe impact";
+  if (penalty <= -15) return "High impact";
+  if (penalty <= -6) return "Moderate impact";
   return "Low impact";
 }
 
