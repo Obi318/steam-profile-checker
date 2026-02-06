@@ -344,14 +344,14 @@ export default function HomePage() {
   }, [bans, data?.signals?.ban?.penalty, data?.signals?.ban?.impact, selectedGame?.appid]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white">
-      <div className="mx-auto max-w-5xl px-4 py-6">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-6 md:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          <div className="pb-5 mb-5">
+    <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white text-[15px]">
+      <div className="mx-auto max-w-5xl px-4 py-5">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5 md:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div className="pb-4 mb-4">
             <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
               <div className="flex items-start gap-4">
                 <div className="min-w-0">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-none">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-none">
                     Steam Profile Checker
                   </h1>
                   <div className="mt-2 text-sm text-white/60">
@@ -374,7 +374,7 @@ export default function HomePage() {
             <label className="block text-sm text-white/80 mb-2">Enter a Steam profile URL</label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
-                className="w-full min-w-0 rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-white placeholder:text-white/30 outline-none focus:border-white/30"
+                className="w-full min-w-0 rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-white placeholder:text-white/30 outline-none focus:border-white/30"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={DEFAULT_PROFILE_URL}
@@ -382,7 +382,7 @@ export default function HomePage() {
               <button
                 onClick={onCheck}
                 disabled={loading}
-                className="w-full sm:w-auto rounded-xl px-5 py-2.5 bg-white/10 border border-white/15 hover:bg-white/15 disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl px-5 py-2 bg-white/10 border border-white/15 hover:bg-white/15 disabled:opacity-50"
               >
                 {loading ? "Checking..." : "Check"}
               </button>
@@ -399,12 +399,12 @@ export default function HomePage() {
           </div>
 
           {/* Game dropdown */}
-          <div className="mt-5 mb-8">
+          <div className="mt-4 mb-7">
             <div className="text-sm text-white/60 mb-2">
               Optional: pick a game to add extra context (hours can slightly adjust the score)
             </div>
             <select
-              className="w-full md:w-[520px] rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-white outline-none focus:border-white/30"
+              className="w-full md:w-[520px] rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-white outline-none focus:border-white/30"
               value={selectedAppId}
               onChange={(e) => setSelectedAppId(e.target.value)}
             >
@@ -432,7 +432,7 @@ export default function HomePage() {
                       className="h-16 w-16 rounded-xl border border-white/10 object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-2xl sm:text-4xl md:text-5xl font-extrabold leading-none truncate">
+                      <div className="text-xl sm:text-3xl md:text-4xl font-extrabold leading-none truncate">
                         {data.personaName || "Unknown"}
                       </div>
 
@@ -495,16 +495,16 @@ export default function HomePage() {
                   </div>
 
                   <div className="mt-5">
-                    <div className={`text-3xl font-extrabold ${verdictColorClass(data.verdict)}`}>
+                    <div className={`text-2xl font-extrabold ${verdictColorClass(data.verdict)}`}>
                       {data.verdict}
                     </div>
 
-                    <div className="mt-3 text-white/75 text-base">
+                    <div className="mt-3 text-white/75 text-sm">
                       {scoreSummary || "Trust score is based on the available public signals."}
                     </div>
 
                     <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                      <div className="text-2xl font-extrabold">
+                      <div className="text-xl font-extrabold">
                         Trust Score: {hasScore ? `${score} / 100` : "Unknown"}
                       </div>
 
@@ -629,8 +629,8 @@ export default function HomePage() {
           ) : null}
 
           {/* Explainer */}
-          <div className="mt-10 border-t border-white/10 pt-8">
-            <h2 className="text-2xl font-extrabold mb-3">How our Trust Score works</h2>
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <h2 className="text-xl font-extrabold mb-3">How our Trust Score works</h2>
             <ul className="space-y-2 text-white/80 text-sm sm:text-base">
               <li>
                 • <span className="font-semibold text-white/90">Account age is the #1 factor.</span>{" "}
@@ -638,6 +638,9 @@ export default function HomePage() {
               </li>
               <li>
                 • <span className="font-semibold text-white/90">Ban indicators</span> are heavy negatives.
+              </li>
+              <li>
+                • <span className="font-semibold text-white/90">Clean ban history</span> adds confidence when visible.
               </li>
               <li>
                 • <span className="font-semibold text-white/90">Game library footprint</span> and{" "}
@@ -650,7 +653,7 @@ export default function HomePage() {
           </div>
 
           {/* Footer */}
-          <div className="mt-10 pb-6 text-white/40 text-sm">
+          <div className="mt-8 pb-5 text-white/40 text-xs">
             V1.1 — Steam Profile Checker.
           </div>
         </div>
@@ -658,3 +661,4 @@ export default function HomePage() {
     </main>
   );
 }
+

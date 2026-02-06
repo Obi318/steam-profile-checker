@@ -277,9 +277,9 @@ function banMeta(bans, penalty) {
 
 function gameHoursAdjustment(hours) {
   if (typeof hours !== "number") return 0;
-  if (hours < 5) return -18;
-  if (hours < 10) return -12;
-  if (hours < 20) return -6;
+  if (hours < 5) return -10;
+  if (hours < 10) return -6;
+  if (hours < 20) return -3;
   return 0;
 }
 
@@ -379,6 +379,8 @@ function calcTrust({
       (bans.NumberOfGameBans ?? 0) > 0 ||
       bans.CommunityBanned ||
       (bans.EconomyBan && bans.EconomyBan !== "none"));
+  const cleanBans = !!bans && !hasAnyBan;
+  const cleanBansBonus = cleanBans ? 14 : 0;
 
   let evidence = 0;
   if (typeof age.ageDays === "number") evidence += 1;
@@ -393,8 +395,9 @@ function calcTrust({
     typeof age.ageDays === "number" &&
     age.ageDays >= 3650 &&
     (banPen === 0 || banPen === -0) &&
-    typeof gamesCount === "number" &&
-    gamesCount >= 20
+    (typeof gamesCount === "number" ||
+      typeof friendsCount === "number" ||
+      typeof steamLevel === "number")
       ? 5
       : 0;
 
@@ -410,6 +413,7 @@ function calcTrust({
         points: {
           age: age.agePoints,
           banPenalty: banPen,
+          cleanBansBonus,
           gameHoursAdj: gameAdj,
           gamesOwned: libPts,
           friends: frPts,
@@ -422,7 +426,8 @@ function calcTrust({
     };
   }
 
-  let score = age.agePoints + lvlPts + frPts + libPts + banPen + gameAdj + veteranBonus;
+  let score =
+    age.agePoints + lvlPts + frPts + libPts + banPen + gameAdj + cleanBansBonus + veteranBonus;
   score = clamp(score, 0, 100);
 
   const verdict = verdictFromScore(score);
@@ -438,6 +443,7 @@ function calcTrust({
       points: {
         age: age.agePoints,
         banPenalty: banPen,
+        cleanBansBonus,
         gameHoursAdj: gameAdj,
         gamesOwned: libPts,
         friends: frPts,
