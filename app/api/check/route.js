@@ -190,14 +190,14 @@ function computeAgeSignals(createdAt) {
         : `${ageDays} day${ageDays === 1 ? "" : "s"} old`;
   }
 
-  // Age points: 0–62 (dominant anchor)
+  // Age points: 0–68 (dominant anchor)
   let agePoints = 0;
-  if (ageDays >= 3650) agePoints = 62; // 10+ years
-  else if (ageDays >= 1825) agePoints = 50; // 5–10
-  else if (ageDays >= 730) agePoints = 38; // 2–5
-  else if (ageDays >= 180) agePoints = 22; // 6–24mo
-  else if (ageDays >= 90) agePoints = 12; // 3–6mo
-  else agePoints = 4; // <3mo
+  if (ageDays >= 3650) agePoints = 68; // 10+ years
+  else if (ageDays >= 1825) agePoints = 55; // 5–10
+  else if (ageDays >= 730) agePoints = 42; // 2–5
+  else if (ageDays >= 180) agePoints = 24; // 6–24mo
+  else if (ageDays >= 90) agePoints = 13; // 3–6mo
+  else agePoints = 5; // <3mo
 
   return { ageDays, ageYears, ageText, agePoints };
 }
@@ -465,7 +465,7 @@ function calcTrust({
       bans.CommunityBanned ||
       (bans.EconomyBan && bans.EconomyBan !== "none"));
   const cleanBans = !!bans && !hasAnyBan;
-  const cleanBansBonus = cleanBans ? 14 : 0;
+  const cleanBansBonus = cleanBans ? 12 : 0;
 
   let evidence = 0;
   if (typeof age.ageDays === "number") evidence += 1;
@@ -483,7 +483,7 @@ function calcTrust({
     (typeof gamesCount === "number" ||
       typeof friendsCount === "number" ||
       typeof steamLevel === "number")
-      ? 5
+      ? 4
       : 0;
 
   const establishedBonus =
@@ -903,3 +903,5 @@ export async function POST(req) {
     return asJsonError(e?.message || "Unknown error", 400);
   }
 }
+
+
