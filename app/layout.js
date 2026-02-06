@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { getSiteUrl, seoConfig } from "./seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -11,20 +13,58 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata = {
-  title: "Steam Profile Checker | Trust Score & Legitimacy Signals",
-  description:
-    "Paste a Steam profile to get a neutral Trust Score based on public Steam signals (account age, profile transparency, Steam level, ban indicators, and optional game hours). Not a cheat detector.",
-  metadataBase: new URL("https://example.com"),
-  openGraph: {
-    title: "Steam Profile Checker",
-    description:
-      "Neutral Trust Score for Steam profiles based on public signals. Not a cheat detector.",
-    type: "website",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: seoConfig.titleDefault,
+    template: seoConfig.titleTemplate,
+  },
+  description: seoConfig.description,
+  applicationName: seoConfig.siteName,
+  keywords: seoConfig.keywords,
+  authors: [{ name: "Steven Negron" }],
+  creator: "Steven Negron",
+  publisher: seoConfig.siteName,
+  alternates: {
+    canonical: "/",
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: seoConfig.siteName,
+    description: seoConfig.description,
+    siteName: seoConfig.siteName,
+    images: [
+      {
+        url: seoConfig.ogImagePath,
+        width: 1200,
+        height: 630,
+        alt: seoConfig.siteName,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: seoConfig.siteName,
+    description: seoConfig.description,
+    images: [seoConfig.twitterImagePath],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
 };
 
@@ -33,6 +73,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white min-h-screen`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
