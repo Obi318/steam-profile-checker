@@ -69,7 +69,7 @@ function socialButtonClass(label) {
 
 function Tag({ tier, children }) {
   const base =
-    "inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-sm font-semibold";
+    "inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs sm:text-sm font-semibold";
   const tone =
     tier === "good"
       ? "text-[#a4d007]"
@@ -100,11 +100,13 @@ function SignalRow({ label, value, tier, note, rightHint }) {
     <div className="py-1.5 sm:py-2 border-b border-white/10 last:border-b-0">
       <div className="flex items-center justify-between gap-4">
         <div className="text-white/90 font-medium text-sm sm:text-base">{label}</div>
-        <div className="text-white font-semibold">{value}</div>
+        <div className="text-white font-semibold text-sm sm:text-base">{value}</div>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-4">
+      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Tag tier={tier}>{note}</Tag>
-        {rightHint ? <div className="text-sm text-white/55">{rightHint}</div> : null}
+        {rightHint ? (
+          <div className="text-xs sm:text-sm text-white/55 sm:text-right">{rightHint}</div>
+        ) : null}
       </div>
     </div>
   );
@@ -661,4 +663,3 @@ export default function HomePage() {
     </main>
   );
 }
-
