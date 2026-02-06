@@ -16,6 +16,60 @@ function asJsonError(message, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+class SteamApiError extends Error {
+  constructor(message, status, endpoint) {
+    super(message);
+    this.name = "SteamApiError";
+    this.status = status;
+    this.endpoint = endpoint;
+  }
+}
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const resultCache = new Map();
+
+function cacheKey({ steamid, selectedAppId }) {
+  return `${steamid}:${selectedAppId ? Number(selectedAppId) : "none"}`;
+}
+
+function getCachedResult(key) {
+  const hit = resultCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > CACHE_TTL_MS) {
+    resultCache.delete(key);
+    return null;
+  }
+  return hit.payload;
+}
+
+function setCachedResult(key, payload) {
+  if (resultCache.size > 500) {
+    const firstKey = resultCache.keys().next().value;
+    if (firstKey) resultCache.delete(firstKey);
+  }
+  resultCache.set(key, { ts: Date.now(), payload });
+}
+
+function mapSteamErrorToClient(err) {
+  if (!(err instanceof SteamApiError)) return null;
+  if (err.status === 429) {
+    return {
+      status: 429,
+      message: "Steam is rate-limiting requests right now. Please retry in about 30-60 seconds.",
+    };
+  }
+  if (err.status >= 500) {
+    return {
+      status: 503,
+      message: "Steam is temporarily unavailable. Please retry in a minute.",
+    };
+  }
+  return {
+    status: 502,
+    message: "Steam returned an unexpected response. Please retry shortly.",
+  };
+}
+
 function isLikelySteamId(s) {
   return /^\d{17}$/.test(s);
 }
@@ -33,7 +87,7 @@ function extractFromSteamUrl(url) {
   return null;
 }
 
-async function steamFetchJson(url) {
+async function steamFetchJson(url, endpoint = "Steam API") {
   const r = await fetch(url, { cache: "no-store" });
   const text = await r.text();
 
@@ -41,10 +95,10 @@ async function steamFetchJson(url) {
   try {
     j = JSON.parse(text);
   } catch {
-    throw new Error(`Steam returned non-JSON (HTTP ${r.status}).`);
+    throw new SteamApiError(`${endpoint} returned non-JSON (HTTP ${r.status}).`, r.status, endpoint);
   }
 
-  if (!r.ok) throw new Error(`Steam HTTP ${r.status}.`);
+  if (!r.ok) throw new SteamApiError(`${endpoint} HTTP ${r.status}.`, r.status, endpoint);
   return j;
 }
 
@@ -63,7 +117,7 @@ async function resolveSteamId({ input, key }) {
     `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?` +
     `key=${key}&vanityurl=${encodeURIComponent(vanity)}`;
 
-  const j = await steamFetchJson(url);
+  const j = await steamFetchJson(url, "ResolveVanityURL");
   const steamid = j?.response?.steamid;
   if (!steamid) throw new Error("Could not resolve that input to a Steam profile.");
   return steamid;
@@ -556,7 +610,12 @@ async function fetchProfileHtml(profileUrl) {
       "Accept-Language": "en-US,en;q=0.9",
     },
   });
-  if (!r.ok) return null;
+  if (!r.ok) {
+    if (r.status === 429 || r.status >= 500) {
+      throw new SteamApiError("Steam profile page fetch failed.", r.status, "ProfileHtml");
+    }
+    return null;
+  }
   return await r.text();
 }
 
@@ -597,12 +656,15 @@ export async function POST(req) {
     const selectedGameName = body?.selectedGameName ?? null;
 
     const steamid = await resolveSteamId({ input, key });
+    const ck = cacheKey({ steamid, selectedAppId });
+    const cached = getCachedResult(ck);
+    if (cached) return NextResponse.json({ ...cached, cache: "hit" });
 
     // 1) Player summary
     const summaryUrl =
       `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?` +
       `key=${key}&steamids=${steamid}`;
-    const summaryJ = await steamFetchJson(summaryUrl);
+    const summaryJ = await steamFetchJson(summaryUrl, "GetPlayerSummaries");
     const player = summaryJ?.response?.players?.[0];
 
     const personaName = player?.personaname ?? null;
@@ -624,9 +686,10 @@ export async function POST(req) {
       const levelUrl =
         `https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?` +
         `key=${key}&steamid=${steamid}`;
-      const levelJ = await steamFetchJson(levelUrl);
+      const levelJ = await steamFetchJson(levelUrl, "GetSteamLevel");
       steamLevel = typeof levelJ?.response?.player_level === "number" ? levelJ.response.player_level : null;
-    } catch {
+    } catch (e) {
+      if (e instanceof SteamApiError && (e.status === 429 || e.status >= 500)) throw e;
       steamLevel = null;
     }
 
@@ -641,7 +704,7 @@ export async function POST(req) {
         `key=${key}&steamid=${steamid}&include_played_free_games=1` +
         (includeAppInfo ? `&include_appinfo=1` : "");
 
-      const gamesJ = await steamFetchJson(gamesUrl);
+      const gamesJ = await steamFetchJson(gamesUrl, "GetOwnedGames");
       gamesCount = typeof gamesJ?.response?.game_count === "number" ? gamesJ.response.game_count : null;
 
       if (selectedAppId && Array.isArray(gamesJ?.response?.games)) {
@@ -651,7 +714,8 @@ export async function POST(req) {
           selectedGameHours = Math.round((found.playtime_forever / 60) * 10) / 10;
         }
       }
-    } catch {
+    } catch (e) {
+      if (e instanceof SteamApiError && (e.status === 429 || e.status >= 500)) throw e;
       gamesCount = null;
       selectedGameHours = null;
     }
@@ -662,10 +726,11 @@ export async function POST(req) {
       const friendsUrl =
         `https://api.steampowered.com/ISteamUser/GetFriendList/v1/?` +
         `key=${key}&steamid=${steamid}&relationship=friend`;
-      const friendsJ = await steamFetchJson(friendsUrl);
+      const friendsJ = await steamFetchJson(friendsUrl, "GetFriendList");
       const friends = friendsJ?.friendslist?.friends;
       if (Array.isArray(friends)) friendsCount = friends.length;
-    } catch {
+    } catch (e) {
+      if (e instanceof SteamApiError && (e.status === 429 || e.status >= 500)) throw e;
       friendsCount = null;
     }
 
@@ -675,9 +740,10 @@ export async function POST(req) {
       const bansUrl =
         `https://api.steampowered.com/ISteamUser/GetPlayerBans/v1/?` +
         `key=${key}&steamids=${steamid}`;
-      const bansJ = await steamFetchJson(bansUrl);
+      const bansJ = await steamFetchJson(bansUrl, "GetPlayerBans");
       bans = bansJ?.players?.[0] ?? null;
-    } catch {
+    } catch (e) {
+      if (e instanceof SteamApiError && (e.status === 429 || e.status >= 500)) throw e;
       bans = null;
     }
 
@@ -732,7 +798,7 @@ export async function POST(req) {
       selectedGameHours,
     });
 
-    return NextResponse.json({
+    const responsePayload = {
       steamid,
       personaName,
       profileUrl,
@@ -777,8 +843,13 @@ export async function POST(req) {
 
       disclaimer:
         "Trust Score is a quick snapshot using available Steam signals (account age, ban indicators, game library footprint, friends count, Steam level, and optional game hours). Not a cheat detector.",
-    });
+    };
+
+    setCachedResult(ck, responsePayload);
+    return NextResponse.json({ ...responsePayload, cache: "miss" });
   } catch (e) {
+    const mapped = mapSteamErrorToClient(e);
+    if (mapped) return asJsonError(mapped.message, mapped.status);
     return asJsonError(e?.message || "Unknown error", 400);
   }
 }

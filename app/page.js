@@ -265,7 +265,15 @@ export default function HomePage() {
       });
 
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j?.error || `Request failed (${r.status})`);
+      if (!r.ok) {
+        if (r.status === 429) {
+          throw new Error("Steam is busy right now. Please wait about 30-60 seconds and try again.");
+        }
+        if (r.status >= 500) {
+          throw new Error("Steam data is temporarily unavailable. Please retry in a minute.");
+        }
+        throw new Error(j?.error || `Request failed (${r.status})`);
+      }
 
       setData(j);
 
