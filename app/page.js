@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function isSteamishInput(s) {
   const t = (s || "").trim();
@@ -197,6 +197,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
+  const [shareHint, setShareHint] = useState("");
 
   const games = useMemo(() => {
     const list = [
@@ -223,26 +224,38 @@ export default function HomePage() {
     return games.find((g) => g.appid === id) || null;
   }, [selectedAppId, games]);
 
-  async function onCheck() {
+  function buildShareUrl({ steamid, appid }) {
+    if (typeof window === "undefined") return "";
+
+    const u = new URL(window.location.href);
+    u.searchParams.delete("q");
+    u.searchParams.delete("id");
+    u.searchParams.delete("game");
+
+    if (steamid) u.searchParams.set("id", String(steamid));
+    if (appid) u.searchParams.set("game", String(appid));
+
+    return u.toString();
+  }
+
+  async function runCheck({ effectiveInput, appidOverride }) {
     setErr("");
     setData(null);
-
-    const raw = (input || "").trim();
-    const effectiveInput = raw ? raw : DEFAULT_PROFILE_URL;
-
-    if (!raw) setInput(DEFAULT_PROFILE_URL);
 
     if (!isSteamishInput(effectiveInput)) {
       setErr("Please enter a Steam community profile URL, vanity name, or a 17-digit SteamID64.");
       return;
     }
 
+    const appidNum = appidOverride ? Number(appidOverride) : selectedGame?.appid ?? null;
+    const gameName = appidNum ? games.find((g) => g.appid === appidNum)?.name ?? null : null;
+
     setLoading(true);
     try {
       const payload = {
         input: effectiveInput,
-        selectedAppId: selectedGame?.appid ?? null,
-        selectedGameName: selectedGame?.name ?? null,
+        selectedAppId: appidNum,
+        selectedGameName: gameName,
       };
 
       const r = await fetch("/api/check", {
@@ -255,12 +268,80 @@ export default function HomePage() {
       if (!r.ok) throw new Error(j?.error || `Request failed (${r.status})`);
 
       setData(j);
+
+      // Persist a stable permalink using SteamID64 once resolved.
+      const shareUrl = buildShareUrl({ steamid: j?.steamid ?? null, appid: appidNum });
+      if (shareUrl) window.history.replaceState(null, "", shareUrl);
     } catch (e) {
       setErr(e?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
   }
+
+  async function onCheck() {
+    const raw = (input || "").trim();
+    const effectiveInput = raw ? raw : DEFAULT_PROFILE_URL;
+
+    if (!raw) setInput(DEFAULT_PROFILE_URL);
+
+    await runCheck({ effectiveInput, appidOverride: null });
+  }
+
+  async function onShare() {
+    if (!data?.steamid) return;
+
+    const url = buildShareUrl({ steamid: data.steamid, appid: selectedGame?.appid ?? null });
+    if (!url) return;
+
+    setShareHint("");
+
+    // Prefer native share sheet on mobile when available.
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Steam Profile Checker",
+          text: "Steam Trust Score snapshot",
+          url,
+        });
+        setShareHint("Shared");
+        setTimeout(() => setShareHint(""), 1500);
+        return;
+      } catch {
+        // fall back to copy
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareHint("Copied");
+      setTimeout(() => setShareHint(""), 1500);
+    } catch {
+      setShareHint("Copy failed");
+      setTimeout(() => setShareHint(""), 1500);
+    }
+  }
+
+  // Support share links like ?id=STEAMID64&game=730
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (data || loading) return;
+
+    const sp = new URLSearchParams(window.location.search);
+    const id = (sp.get("id") || sp.get("q") || "").trim();
+    const game = (sp.get("game") || "").trim();
+
+    if (!id) return;
+
+    setInput(id);
+    if (game) setSelectedAppId(game);
+
+    // Run once on load if link is valid.
+    if (isSteamishInput(id)) {
+      runCheck({ effectiveInput: id, appidOverride: game || null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const score = data?.trustLevel ?? null;
   const hasScore = typeof score === "number";
@@ -278,6 +359,40 @@ export default function HomePage() {
 
   const bans = data?.bans || null;
   const friendsCount = typeof data?.friendsCount === "number" ? data.friendsCount : null;
+
+  const coverage = useMemo(() => {
+    // A lightweight "how much was visible" meter. This mirrors the API's idea of openness
+    // but shows an explicit numerator/denominator to reduce confusion on private profiles.
+    if (!data) return null;
+
+    let possible = 0;
+    let available = 0;
+
+    possible += 1;
+    if (data?.createdAt) available += 1;
+
+    possible += 1;
+    if (data?.bans) available += 1;
+
+    possible += 1;
+    if (typeof data?.steamLevel === "number") available += 1;
+
+    possible += 1;
+    if (typeof data?.gamesCount === "number") available += 1;
+
+    possible += 1;
+    if (typeof data?.friendsCount === "number") available += 1;
+
+    if (selectedAppId) {
+      possible += 1;
+      if (typeof data?.selectedGame?.hours === "number") available += 1;
+    }
+
+    const pct = possible ? Math.round((available / possible) * 100) : 0;
+    const label = pct >= 75 ? "Open" : pct >= 25 ? "Semi-Open" : "Private";
+
+    return { possible, available, pct, label };
+  }, [data, selectedAppId]);
   const openness = data?.openness ?? null;
 
   const scoreSummary = data?.scoreSummary ?? null;
@@ -351,8 +466,8 @@ export default function HomePage() {
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5 md:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           <div className="pb-4 mb-4">
             <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
-              <div className="flex items-start gap-4">
-                <div className="min-w-0">
+              <div className="relative">
+                <div className="text-center">
                   <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-none">
                     Steam Profile Checker
                   </h1>
@@ -361,7 +476,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="ml-auto hidden sm:flex items-center gap-2 pt-1">
+                <div className="absolute right-0 top-0 hidden sm:flex items-center gap-2 pt-1">
                   <div className="text-xs uppercase tracking-widest text-white/50">v1.1</div>
                   <div className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/70">
                     Beta
@@ -475,6 +590,15 @@ export default function HomePage() {
                                 </span>
                               </span>
                             ) : null}
+
+                            {coverage ? (
+                              <span className="mt-1 text-xs text-white/60">
+                                Coverage:{" "}
+                                <span className="font-semibold text-white/75">
+                                  {coverage.available}/{coverage.possible} ({coverage.label})
+                                </span>
+                              </span>
+                            ) : null}
                           </span>
                         ) : null}
 
@@ -505,6 +629,18 @@ export default function HomePage() {
                       {scoreSummary || "Trust score is based on the available public signals."}
                     </div>
 
+                    {data?.steamid ? (
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          onClick={onShare}
+                          className="rounded-lg px-3 py-1.5 text-xs sm:text-sm bg-white/10 border border-white/15 hover:bg-white/15"
+                        >
+                          Share result
+                        </button>
+                        {shareHint ? <div className="text-xs text-white/55">{shareHint}</div> : null}
+                      </div>
+                    ) : null}
+
                     <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="text-xl font-extrabold">
                         Trust Score: {hasScore ? `${score} / 100` : "Unknown"}
@@ -518,7 +654,9 @@ export default function HomePage() {
                                 className="h-full rounded-full"
                                 style={{
                                   width: `${scorePct}%`,
-                                  background: `linear-gradient(90deg, ${visuals.color}, rgba(255,255,255,0.14))`,
+                                  backgroundColor: visuals.color,
+                                  backgroundImage:
+                                    "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(0,0,0,0.15))",
                                   boxShadow: `0 0 18px ${visuals.glow}`,
                                 }}
                               />
