@@ -22,6 +22,7 @@ Put your Steam Web API key in `.env.local`:
 
 ```
 STEAM_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NEXT_PUBLIC_SITE_URL=https://steamchecker.io
 ```
 
 3) Run
@@ -37,4 +38,3 @@ Open http://localhost:3000
 - App Router: `app/`
 - API route: `app/api/check/route.js`
 - UI: `app/page.js`
-
