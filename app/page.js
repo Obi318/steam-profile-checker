@@ -22,15 +22,15 @@ function verdictColorClass(verdict) {
   switch (verdict) {
     case "CERTIFIED LEGIT":
     case "LIKELY LEGIT":
-      return "text-emerald-400";
+      return "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]";
     case "PROBABLY LEGIT":
-      return "text-lime-400";
+      return "text-lime-300 drop-shadow-[0_0_8px_rgba(163,230,53,0.5)]";
     case "MIXED SIGNALS":
-      return "text-yellow-300";
+      return "text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]";
     case "SUSPECT":
-      return "text-orange-400";
+      return "text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]";
     case "HIGH RISK":
-      return "text-red-500";
+      return "text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]";
     case "UNKNOWN":
       return "text-orange-400";
     default:
@@ -38,28 +38,19 @@ function verdictColorClass(verdict) {
   }
 }
 
-function scoreBarColorClass(score) {
-  if (score >= 85) return "bg-emerald-400";
-  if (score >= 70) return "bg-lime-400";
-  if (score >= 50) return "bg-yellow-300";
-  if (score >= 30) return "bg-orange-400";
-  return "bg-red-500";
-}
-
 function scoreBarVisuals(score) {
-  // Minimal "premium" look: subtle gradient + glow that matches the tier color.
-  if (score >= 85) return { color: "#34d399", glow: "rgba(52,211,153,0.28)" }; // emerald-400
-  if (score >= 70) return { color: "#a3e635", glow: "rgba(163,230,53,0.26)" }; // lime-400
-  if (score >= 50) return { color: "#fde047", glow: "rgba(253,224,71,0.22)" }; // yellow-300
-  if (score >= 30) return { color: "#fb923c", glow: "rgba(251,146,60,0.22)" }; // orange-400
-  return { color: "#ef4444", glow: "rgba(239,68,68,0.22)" }; // red-500
+  if (score >= 85) return { color: "#34d399", glow: "rgba(52,211,153,0.6)" }; // emerald-400
+  if (score >= 70) return { color: "#a3e635", glow: "rgba(163,230,53,0.6)" }; // lime-400
+  if (score >= 50) return { color: "#fde047", glow: "rgba(253,224,71,0.6)" }; // yellow-300
+  if (score >= 30) return { color: "#fb923c", glow: "rgba(251,146,60,0.6)" }; // orange-400
+  return { color: "#ef4444", glow: "rgba(239,68,68,0.6)" }; // red-500
 }
 
 function socialButtonClass(label) {
-  if (label === "Twitch") return "border-purple-500/40 text-purple-200 hover:bg-purple-500/10";
-  if (label === "YouTube") return "border-red-500/40 text-red-200 hover:bg-red-500/10";
-  if (label === "X") return "border-slate-400/40 text-slate-100 hover:bg-slate-400/10";
-  if (label === "Kick") return "border-green-500/40 text-green-200 hover:bg-green-500/10";
+  if (label === "Twitch") return "border-purple-500/30 text-purple-200 hover:bg-purple-500/20 hover:border-purple-400/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]";
+  if (label === "YouTube") return "border-red-500/30 text-red-200 hover:bg-red-500/20 hover:border-red-400/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]";
+  if (label === "X") return "border-slate-400/30 text-slate-200 hover:bg-slate-400/20 hover:border-slate-300/50 hover:shadow-[0_0_15px_rgba(148,163,184,0.3)]";
+  if (label === "Kick") return "border-green-500/30 text-green-200 hover:bg-green-500/20 hover:border-green-400/50 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]";
   return "border-white/20 text-white/80 hover:bg-white/10";
 }
 
@@ -69,43 +60,31 @@ function socialButtonClass(label) {
 
 function Tag({ tier, children }) {
   const base =
-    "inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs sm:text-sm font-semibold";
-  const tone =
-    tier === "good"
-      ? "text-[#a4d007]"
-      : tier === "warn"
-      ? "text-[#f1c40f]"
-      : tier === "bad"
-      ? "text-[#e74c3c]"
-      : "text-white/70";
+    "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-md transition-all duration-300";
 
-  const bg =
+  const styles =
     tier === "good"
-      ? "rgba(164,208,7,0.10)"
+      ? "border-lime-500/30 bg-lime-500/10 text-lime-200 shadow-[0_0_10px_rgba(132,204,22,0.1)]"
       : tier === "warn"
-      ? "rgba(241,196,15,0.10)"
-      : tier === "bad"
-      ? "rgba(231,76,60,0.10)"
-      : "rgba(255,255,255,0.06)";
+        ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-200 shadow-[0_0_10px_rgba(234,179,8,0.1)]"
+        : tier === "bad"
+          ? "border-red-500/30 bg-red-500/10 text-red-200 shadow-[0_0_10px_rgba(239,68,68,0.1)]"
+          : "border-white/10 bg-white/5 text-white/60";
 
-  return (
-    <span className={`${base} ${tone}`} style={{ background: bg }}>
-      {children}
-    </span>
-  );
+  return <span className={`${base} ${styles}`}>{children}</span>;
 }
 
 function SignalRow({ label, value, tier, note, rightHint }) {
   return (
-    <div className="py-1.5 sm:py-2 border-b border-white/10 last:border-b-0">
+    <div className="py-3 sm:py-4 border-b border-white/[0.06] last:border-b-0 group">
       <div className="flex items-center justify-between gap-4">
-        <div className="text-white/90 font-medium text-sm sm:text-base">{label}</div>
-        <div className="text-white font-semibold text-sm sm:text-base">{value}</div>
+        <div className="text-white/70 font-medium text-sm sm:text-[15px] group-hover:text-white/90 transition-colors">{label}</div>
+        <div className="text-white font-semibold text-sm sm:text-[15px] tracking-wide text-glow">{value}</div>
       </div>
-      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Tag tier={tier}>{note}</Tag>
         {rightHint ? (
-          <div className="text-xs sm:text-sm text-white/55 sm:text-right">{rightHint}</div>
+          <div className="text-xs sm:text-sm text-white/40 sm:text-right italic">{rightHint}</div>
         ) : null}
       </div>
     </div>
@@ -227,6 +206,10 @@ export default function HomePage() {
   const [data, setData] = useState(null);
   const [shareHint, setShareHint] = useState("");
 
+  // Add mount animation state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const games = useMemo(() => {
     const list = [
       { name: "Apex Legends", appid: 1172470 },
@@ -240,6 +223,7 @@ export default function HomePage() {
       { name: "PUBG: BATTLEGROUNDS", appid: 578080 },
       { name: "Rust", appid: 252490 },
       { name: "Team Fortress 2", appid: 440 },
+      { name: "The Finals", appid: 2073850 },
       { name: "Tom Clancy's Rainbow Six Siege", appid: 359550 },
     ];
 
@@ -327,34 +311,62 @@ export default function HomePage() {
   async function onShare() {
     if (!data?.steamid) return;
 
-    const url = buildShareUrl({ steamid: data.steamid, appid: selectedGame?.appid ?? null });
+    const url = buildShareUrl({ steamid: data.steamid, appid: selectedAppId || null });
     if (!url) return;
 
     setShareHint("");
 
-    // Prefer native share sheet on mobile when available.
+    const handleSuccess = (msg) => {
+      setShareHint(msg);
+      setTimeout(() => setShareHint(""), 2500);
+    };
+
+    // 1. Try Native Share (Mobile/Supported)
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Steam Profile Checker",
-          text: "Steam Trust Score snapshot",
-          url,
+          text: `Check out ${data.personaName}'s Steam Trust Score!`,
+          url: url,
         });
-        setShareHint("Shared");
-        setTimeout(() => setShareHint(""), 1500);
+        handleSuccess("Shared!");
         return;
-      } catch {
-        // fall back to copy
+      } catch (err) {
+        // User cancelled or share failed, fall back to clipboard
       }
     }
 
+    // 2. Try Clipboard API
     try {
-      await navigator.clipboard.writeText(url);
-      setShareHint("Copied");
-      setTimeout(() => setShareHint(""), 1500);
-    } catch {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        handleSuccess("Link Copied!");
+        return;
+      }
+    } catch (err) {
+      // Fallback to execCommand
+    }
+
+    // 3. Legacy Fallback
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) {
+        handleSuccess("Link Copied!");
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
       setShareHint("Copy failed");
-      setTimeout(() => setShareHint(""), 1500);
+      setTimeout(() => setShareHint(""), 2500);
     }
   }
 
@@ -432,18 +444,6 @@ export default function HomePage() {
   const openness = data?.openness ?? null;
 
   const scoreSummary = data?.scoreSummary ?? null;
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: FAQ_ITEMS.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
-  };
 
   const ageTier = tierForAccountAgeDays(data?.signals?.ageDays ?? null);
   const levelTier = tierForSteamLevel(data?.steamLevel);
@@ -508,361 +508,340 @@ export default function HomePage() {
     };
   }, [bans, data?.signals?.ban?.penalty, data?.signals?.ban?.impact, selectedGame?.appid]);
 
+  // If not mounted yet to avoid hydration mismatch on random noise bg
+  if (!mounted) return null;
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0b0f14] via-black to-black text-white text-[15px]">
-      <div className="mx-auto max-w-5xl px-4 py-5">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-5 md:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-          <div className="pb-4 mb-4">
-            <div className="rounded-2xl bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-5 py-4">
+    <main className="min-h-screen text-[15px] selection:bg-white/20 relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-4000" />
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12 relative z-10">
+        {/* Main Glass Card */}
+        <div className="glass-card rounded-[32px] p-1 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+          <div className="rounded-[28px] bg-black/40 p-6 sm:p-10 border border-white/[0.03]">
+            <div className="pb-8 mb-6 border-b border-white/[0.08]">
+              {/* Header */}
               <div className="relative">
-                <div className="text-center">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-none">
-                    Steam Profile Checker
+                <div className="text-center space-y-4">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-[0.3em] text-white drop-shadow-2xl">
+                    Steam Checker
                   </h1>
-                  <div className="mt-2 text-sm text-white/60">
-                    A snapshot of public Steam profile information summarized into a trust score.
+                  <div className="text-xs sm:text-sm text-white/40 font-bold uppercase tracking-[0.2em] max-w-lg mx-auto leading-relaxed">
+                    Instant trust analysis for any Steam account.
                   </div>
                 </div>
 
-                <div className="absolute right-0 top-0 hidden sm:flex items-center gap-2 pt-1">
-                  <div className="text-xs uppercase tracking-widest text-white/50">v1.1</div>
-                  <div className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/70">
-                    Beta
+                <div className="absolute right-0 top-1 hidden sm:flex items-center gap-2">
+                  <div className="px-2.5 py-1 rounded-full bg-white/[0.07] border border-white/10 text-[10px] uppercase font-bold tracking-widest text-white/60 shadow-lg backdrop-blur-sm">
+                    v1.1
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Input */}
-          <div className="mb-3">
-            <label className="block text-sm text-white/80 mb-2">Enter a Steam profile URL</label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                className="w-full min-w-0 rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-white placeholder:text-white/30 outline-none focus:border-white/30"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={DEFAULT_PROFILE_URL}
-              />
-              <button
-                onClick={onCheck}
-                disabled={loading}
-                className="w-full sm:w-auto rounded-xl px-5 py-2 bg-white/10 border border-white/15 hover:bg-white/15 disabled:opacity-50"
-              >
-                {loading ? "Checking..." : "Check"}
-              </button>
-            </div>
-
-            {err ? (
-              <div className="mt-3 text-red-300">
-                {err}{" "}
-                <span className="text-white/60">
-                  (Tip: open someone’s Steam profile and copy the URL from the address bar.)
-                </span>
+            {/* Input Section */}
+            <div className="mb-8 space-y-6">
+              <div className="relative group z-10">
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-lg" />
+                <div className="relative flex flex-col sm:flex-row gap-4">
+                  <input
+                    className="w-full min-w-0 rounded-xl bg-white/[0.07] border-2 border-white/5 px-5 py-4 text-lg text-white placeholder:text-white/20 outline-none focus:border-white/20 focus:bg-white/10 transition-all font-medium backdrop-blur-sm shadow-inner"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Paste profile URL, SteamID64, or vanity name..."
+                  />
+                  <button
+                    onClick={onCheck}
+                    disabled={loading}
+                    className="w-full sm:w-auto rounded-xl px-8 py-4 bg-white text-black font-bold text-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] transition-all active:scale-95"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      </span>
+                    ) : "Check"}
+                  </button>
+                </div>
               </div>
-            ) : null}
-          </div>
 
-          {/* Game dropdown */}
-          <div className="mt-4 mb-7">
-            <div className="text-sm text-white/60 mb-2">
-              Optional: pick a game to add extra context (hours can slightly adjust the score)
-            </div>
-            <select
-              className="w-full md:w-[520px] rounded-xl bg-white/10 border border-white/15 px-4 py-2 text-white outline-none focus:border-white/30"
-              value={selectedAppId}
-              onChange={(e) => setSelectedAppId(e.target.value)}
-            >
-              <option value="" className="bg-[#0b0f14] text-white">
-                None (base score)
-              </option>
-              {games.map((g) => (
-                <option key={g.appid} value={String(g.appid)} className="bg-[#0b0f14] text-white">
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              {err ? (
+                <div className="animate-in fade-in slide-in-from-top-2 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm font-medium flex gap-3 items-center">
+                  <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                  {err}
+                </div>
+              ) : null}
 
-          {/* Results */}
-          {data ? (
-            <div className="rounded-2xl border border-white/12 bg-white/5 p-4 sm:p-5">
-              <div className="grid gap-5 md:grid-cols-2">
-                {/* LEFT: Summary */}
-                <div className="min-w-0">
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={data.avatar || ""}
-                      alt=""
-                      className="h-16 w-16 rounded-xl border border-white/10 object-cover"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xl sm:text-3xl md:text-4xl font-extrabold leading-none truncate">
-                        {data.personaName || "Unknown"}
-                      </div>
-
-                      <div className="mt-2 text-white/70 flex flex-wrap gap-x-6 gap-y-1">
-                        {data.profileUrl ? (
-                          <a
-                            href={data.profileUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sky-300 hover:text-sky-200"
-                          >
-                            Open profile
-                          </a>
-                        ) : null}
-
-                        {createdShort || openness ? (
-                          <span className="flex flex-col leading-tight">
-                            {createdShort ? (
-                              <span>
-                                Created:{" "}
-                                <span className="font-semibold text-white/85">{createdShort}</span>
-                              </span>
-                            ) : null}
-
-                            {openness ? (
-                              <span className="mt-1 text-xs text-white/60">
-                                Openness:{" "}
-                                <span
-                                  className={
-                                    openness === "Open"
-                                      ? "font-semibold text-emerald-300"
-                                      : openness === "Semi-Open"
-                                      ? "font-semibold text-yellow-300"
-                                      : "font-semibold text-red-400"
-                                  }
-                                >
-                                  {openness}
-                                </span>
-                              </span>
-                            ) : null}
-
-                            {coverage ? (
-                              <span className="mt-1 text-xs text-white/60">
-                                Coverage:{" "}
-                                <span className="font-semibold text-white/75">
-                                  {coverage.available}/{coverage.possible} ({coverage.label})
-                                </span>
-                              </span>
-                            ) : null}
-                          </span>
-                        ) : null}
-
-                        {regionLabel ? (
-                          <span>
-                            Region: <span className="font-semibold text-white/85">{regionLabel}</span>
-                          </span>
-                        ) : null}
-
-                        {data.currentlyPlaying?.name ? (
-                          <span>
-                            Playing:{" "}
-                            <span className="font-semibold text-white/85">
-                              {data.currentlyPlaying.name}
-                            </span>
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
+              {/* Game Context */}
+              <div className="flex flex-col sm:flex-row items-baseline gap-4 pt-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Optional Context</label>
+                <div className="relative flex-1 w-full">
+                  <select
+                    className="w-full appearance-none rounded-lg bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-white/80 outline-none focus:border-white/30 transition-colors cursor-pointer hover:bg-white/[0.07]"
+                    value={selectedAppId}
+                    onChange={(e) => setSelectedAppId(e.target.value)}
+                  >
+                    <option value="" className="bg-[#050505] text-white/50">Select a game for hour analysis...</option>
+                    <option value="" className="bg-[#050505] text-white">None (Base Score)</option>
+                    {games.map((g) => (
+                      <option key={g.appid} value={String(g.appid)} className="bg-[#050505] text-white">
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 opacity-50">
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="stroke-white">
+                      <path d="M1 1L5 5L9 1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </div>
+                </div>
+              </div>
+            </div>
 
-                  <div className="mt-5">
-                    <div className={`text-2xl font-extrabold ${verdictColorClass(data.verdict)}`}>
-                      {data.verdict}
-                    </div>
+            {/* Results Area */}
+            {data ? (
+              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
 
-                    <div className="mt-3 text-white/75 text-sm">
-                      {scoreSummary || "Trust score is based on the available public signals."}
-                    </div>
+                  {/* LEFT: Identity & Score */}
+                  <div className="space-y-6">
+                    {/* Identity Card */}
+                    <div className="glass-card hover:glass-card-hover rounded-2xl p-6 relative overflow-hidden group">
+                      {/* Avatar & Name */}
+                      <div className="flex items-start gap-5 relative z-10">
+                        <div className="relative">
+                          <img
+                            src={data.avatar || ""}
+                            alt=""
+                            className="h-20 w-20 rounded-2xl border-2 border-white/10 shadow-2xl"
+                          />
+                          <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-[#1a1a1a] ${openness === 'Private' ? 'bg-red-500' : openness === 'Semi-Open' ? 'bg-yellow-400' : 'bg-emerald-500'} shadow-[0_0_10px_rgba(0,0,0,0.5)]`} />
+                        </div>
 
-                    {data?.steamid ? (
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          onClick={onShare}
-                          className="rounded-lg px-3 py-1.5 text-xs sm:text-sm bg-white/10 border border-white/15 hover:bg-white/15"
-                        >
-                          Share result
-                        </button>
-                        {shareHint ? <div className="text-xs text-white/55">{shareHint}</div> : null}
-                      </div>
-                    ) : null}
+                        <div className="flex-1 min-w-0 pt-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h2 className="text-2xl font-bold text-white truncate text-glow">{data.personaName}</h2>
+                            {regionLabel && (
+                              <span className="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white/60 tracking-wider uppercase border border-white/5">
+                                {data?.region?.code || "UNK"}
+                              </span>
+                            )}
+                          </div>
 
-                    <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                      <div className="text-xl font-extrabold">
-                        Trust Score: {hasScore ? `${score} / 100` : "Unknown"}
-                      </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/50 mt-1">
+                            {data.profileUrl && (
+                              <a
+                                href={data.profileUrl}
+                                target="_blank"
+                                noreferrer="true"
+                                className="hover:text-white transition-colors flex items-center gap-1"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                Steam Profile
+                              </a>
+                            )}
 
-                      <div className="w-full sm:flex-1 sm:max-w-xl">
-                        <div className="relative h-3 rounded-full bg-white/10 overflow-hidden border border-white/10">
-                          {hasScore ? (
-                            <>
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${scorePct}%`,
-                                  backgroundColor: visuals.color,
-                                  backgroundImage:
-                                    "linear-gradient(180deg, rgba(255,255,255,0.20), rgba(0,0,0,0.15))",
-                                  boxShadow: `0 0 18px ${visuals.glow}`,
-                                }}
-                              />
-                              <div
-                                className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-white/90 border border-black/40 shadow-[0_6px_18px_rgba(0,0,0,0.35)]"
-                                style={{ left: `calc(${knobPct}% - 8px)` }}
-                              />
-                            </>
-                          ) : (
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/5 to-white/10 opacity-70" />
-                          )}
+                            <div className="flex items-center gap-2 px-2.5 py-1 bg-white/5 rounded-lg border border-white/5 shadow-sm hover:bg-white/10 transition-colors group cursor-default">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:shadow-[0_0_8px_rgba(52,211,153,0.6)] transition-shadow"></span>
+                              <span className="text-white/50 font-bold text-[10px] tracking-wider uppercase">CREATED</span>
+                              <span className="text-white font-medium tracking-wide text-xs uppercase opacity-90">{createdShort || "Unknown"}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* RIGHT: Details */}
-                <div className="min-w-0">
-                  <div className="mt-5 rounded-xl border border-white/10 bg-black/20 px-4">
-                    {data?.signals?.ageText ? (
-                      <SignalRow
-                        label="Account age"
-                        value={data?.signals?.ageText ?? "—"}
-                        tier={ageTier.tier}
-                        note={ageTier.note}
-                        rightHint={ageTier.hint}
-                      />
-                    ) : null}
+                      {/* Verdict */}
+                      <div className="mt-8 mb-2">
+                        <div className="text-xs font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Trust Verdict</div>
+                        <div className={`text-4xl sm:text-5xl font-black italic tracking-tight ${verdictColorClass(data.verdict)}`}>
+                          {data.verdict}
+                        </div>
+                        <p className="mt-4 text-white/60 text-sm leading-relaxed border-l-2 border-white/10 pl-4 pr-16">
+                          {scoreSummary || "Analysis based on public profile visibility."}
+                        </p>
+                      </div>
 
-                    {bans ? (
-                      <SignalRow
-                        label="Ban indicators"
-                        value={banDisplay.value}
-                        tier={bansTier.tier}
-                        note={bansTier.note}
-                        rightHint={banDisplay.hint}
-                      />
-                    ) : null}
-
-                    {selectedHours ? (
-                      <SignalRow
-                        label={`${selectedHours.name} hours`}
-                        value={`${selectedHours.hours} hrs`}
-                        tier={hoursTier.tier}
-                        note={hoursTier.note}
-                        rightHint={hoursTier.hint}
-                      />
-                    ) : null}
-
-                    {typeof data.gamesCount === "number" ? (
-                      <SignalRow
-                        label="Games owned"
-                        value={String(data.gamesCount)}
-                        tier={gamesTier.tier}
-                        note={gamesTier.note}
-                        rightHint={gamesTier.hint}
-                      />
-                    ) : null}
-
-                    {typeof friendsCount === "number" ? (
-                      <SignalRow
-                        label="Friends"
-                        value={String(friendsCount)}
-                        tier={friendsTier.tier}
-                        note={friendsTier.note}
-                        rightHint={friendsTier.hint}
-                      />
-                    ) : null}
-
-                    {typeof data.steamLevel === "number" ? (
-                      <SignalRow
-                        label="Steam level"
-                        value={String(data.steamLevel)}
-                        tier={levelTier.tier}
-                        note={levelTier.note}
-                        rightHint={levelTier.hint}
-                      />
-                    ) : null}
-                  </div>
-
-                  {Array.isArray(data.socialLinks) && data.socialLinks.length ? (
-                    <div className="mt-5">
-                      <div className="text-white/80 font-semibold mb-2">Social links</div>
-                      <div className="flex flex-wrap gap-2">
-                        {data.socialLinks.map((l) => (
-                          <a
-                            key={l.url}
-                            href={l.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-sm ${socialButtonClass(
-                              l.label
-                            )}`}
+                      {/* Share */}
+                      {data?.steamid && (
+                        <div className="absolute bottom-6 right-6 z-50 pointer-events-auto flex flex-col items-end gap-2">
+                          {shareHint && (
+                            <span className="text-xs font-bold text-emerald-400 bg-black/80 backdrop-blur-md px-2 py-1 rounded-md border border-emerald-500/20 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+                              {shareHint}
+                            </span>
+                          )}
+                          <button
+                            onClick={onShare}
+                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 shadow-xl"
+                            title="Share this result"
                           >
-                            {l.label}
-                          </a>
-                        ))}
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Trust Score Meter */}
+                    <div className="glass-card p-6 rounded-2xl flex flex-col justify-center">
+                      <div className="flex justify-between items-end mb-4">
+                        <div className="text-sm font-bold text-white/40 uppercase tracking-widest">Trust Score</div>
+                        <div className="text-3xl font-black text-white">{hasScore ? score : "?"}<span className="text-lg text-white/30 font-normal">/100</span></div>
+                      </div>
+
+                      <div className="relative h-6 bg-black/50 rounded-full overflow-hidden shadow-inner border border-white/5">
+                        {hasScore ? (
+                          <>
+                            <div
+                              className="absolute top-0 bottom-0 left-0 transition-all duration-1000 ease-out"
+                              style={{
+                                width: `${scorePct}%`,
+                                background: `linear-gradient(90deg, ${visuals.color} 0%, ${visuals.color} 100%)`,
+                                boxShadow: `0 0 20px ${visuals.glow}`
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
+                            </div>
+                            {/* Knob */}
+                            <div
+                              className="absolute top-1/2 -translate-y-1/2 h-8 w-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] z-10 transition-all duration-1000"
+                              style={{ left: `${knobPct}%` }}
+                            />
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-white/5 animate-pulse" />
+                        )}
                       </div>
                     </div>
-                  ) : null}
+                  </div>
 
-                  <div className="mt-5 text-white/50 text-sm">
-                    {data.disclaimer ||
-                      "Trust Score uses available Steam signals. Not a cheat detector."}
+                  {/* RIGHT: Signals */}
+                  <div className="glass-card rounded-2xl p-6 sm:p-8 flex flex-col h-full">
+                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+                      <div className="h-2 w-2 rounded-full bg-white/50" />
+                      <h3 className="font-bold text-white uppercase tracking-widest text-sm">Signal Analysis</h3>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                      {data?.signals?.ageText ? (
+                        <SignalRow
+                          label="Account Age"
+                          value={data?.signals?.ageText}
+                          tier={ageTier.tier}
+                          note={ageTier.note}
+                          rightHint={ageTier.hint}
+                        />
+                      ) : null}
+
+                      {bans ? (
+                        <SignalRow
+                          label="Ban Record"
+                          value={banDisplay.value}
+                          tier={bansTier.tier}
+                          note={bansTier.note}
+                          rightHint={banDisplay.hint}
+                        />
+                      ) : null}
+
+                      {selectedHours ? (
+                        <SignalRow
+                          label={`${selectedHours.name}`}
+                          value={`${selectedHours.hours} hrs`}
+                          tier={hoursTier.tier}
+                          note={hoursTier.note}
+                          rightHint={hoursTier.hint}
+                        />
+                      ) : null}
+
+                      {typeof data.gamesCount === "number" ? (
+                        <SignalRow
+                          label="Game Library"
+                          value={data.gamesCount.toLocaleString()}
+                          tier={gamesTier.tier}
+                          note={gamesTier.note}
+                          rightHint={gamesTier.hint}
+                        />
+                      ) : null}
+
+                      {typeof friendsCount === "number" ? (
+                        <SignalRow
+                          label="Friends List"
+                          value={friendsCount.toLocaleString()}
+                          tier={friendsTier.tier}
+                          note={friendsTier.note}
+                          rightHint={friendsTier.hint}
+                        />
+                      ) : null}
+
+                      {typeof data.steamLevel === "number" ? (
+                        <SignalRow
+                          label="Steam Level"
+                          value={data.steamLevel}
+                          tier={levelTier.tier}
+                          note={levelTier.note}
+                          rightHint={levelTier.hint}
+                        />
+                      ) : null}
+                    </div>
+
+                    {Array.isArray(data.socialLinks) && data.socialLinks.length > 0 && (
+                      <div className="mt-8 pt-6 border-t border-white/5">
+                        <div className="text-xs font-bold text-white/30 uppercase tracking-widest mb-4">Linked Accounts</div>
+                        <div className="flex flex-wrap gap-2">
+                          {data.socialLinks.map((l) => (
+                            <a
+                              key={l.url}
+                              href={l.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-wide transition-all ${socialButtonClass(l.label)}`}
+                            >
+                              {l.label}
+                              <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-
-          {/* Explainer */}
-          <div className="mt-8 border-t border-white/10 pt-6">
-            <h2 className="text-xl font-extrabold mb-3">How our Trust Score works</h2>
-            <ul className="space-y-2 text-white/80 text-sm sm:text-base">
-              <li>
-                • <span className="font-semibold text-white/90">Account age is the #1 factor.</span>{" "}
-                Very old accounts get a large boost.
-              </li>
-              <li>
-                • <span className="font-semibold text-white/90">Ban indicators</span> are heavy negatives.
-              </li>
-              <li>
-                • <span className="font-semibold text-white/90">Clean ban history</span> adds confidence when visible.
-              </li>
-              <li>
-                • <span className="font-semibold text-white/90">Game library footprint</span> and{" "}
-                <span className="font-semibold text-white/90">friends count</span> can add confidence when available.
-              </li>
-              <li>
-                • <span className="font-semibold text-white/90">Optional game hours</span> only applies if you pick a game.
-              </li>
-            </ul>
-          </div>
-
-          <div className="mt-8 border-t border-white/10 pt-6">
-            <h2 className="text-xl font-extrabold mb-3">FAQ</h2>
-            <div className="space-y-4">
-              {FAQ_ITEMS.map((item) => (
-                <div key={item.question} className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-white">{item.question}</h3>
-                  <p className="mt-1 text-sm sm:text-base text-white/75">{item.answer}</p>
+            ) : (
+              <div className="pt-12 pb-8 text-center">
+                <div className="inline-block p-4 rounded-full bg-white/[0.03] border border-white/5 mb-4">
+                  <svg className="w-8 h-8 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-              ))}
-            </div>
+                <p className="text-white/30 text-sm font-medium">Ready to analyze</p>
+              </div>
+            )}
           </div>
+        </div>
+        {/* FAQ Section */}
+        <div className="mt-24 max-w-3xl mx-auto">
+          <h3 className="text-xl font-bold text-white mb-8 text-center uppercase tracking-widest opacity-80">Frequently Asked Questions</h3>
+          <div className="grid gap-6">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="glass-card p-6 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors">
+                <h4 className="text-white font-bold mb-2 text-lg">{item.question}</h4>
+                <p className="text-white/60 text-sm leading-relaxed">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Footer */}
-          <div className="mt-8 pb-5 text-white/40 text-xs">
-            V1.1 — Steam Profile Checker.
-          </div>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-          />
+
+        {/* Footer */}
+        <div className="mt-12 text-center text-white/20 text-xs">
+          <p>© 2024 Steam Checker. Not affiliated with Valve Corp.</p>
         </div>
       </div>
     </main>
   );
 }
-
