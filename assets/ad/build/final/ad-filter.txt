@@ -1,0 +1,24 @@
+[0:v]trim=start=23:end=25.6,setpts=PTS-STARTPTS,scale=2440:4320,crop=1080:1920:x='(iw-1080)/2+12*sin(5*t)':y='(ih-1920)/2+8*sin(9*t)',fps=30,format=yuv420p[vga];
+[0:v]trim=start=25.6:end=26.7,setpts=2*(PTS-STARTPTS),scale=2600:4600,crop=1080:1920:x='(iw-1080)/2+30*sin(38*t)':y='(ih-1920)/2+20*sin(53*t)',eq=contrast=1.08:saturation=1.15,fps=30[vgb];
+[0:v]trim=start=26.65:end=26.70,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration=0.8,scale=2850:5050,crop=1080:1920:x='(iw-1080)/2':y='(ih-1920)/2',eq=contrast=1.15:saturation=0.7,fps=30[vgc];
+[vga][vgb][vgc]concat=n=3:v=1:a=0[vgame];
+
+[1:v]trim=start=0:end=9.8,setpts=PTS-STARTPTS,crop=1215:2160:(iw-1215)/2:(ih-2160)/2,scale=1080:1920,fps=30,format=yuv420p[vui];
+[1:v]trim=start=8.9:end=8.94,setpts=PTS-STARTPTS,crop=1215:2160:(iw-1215)/2:(ih-2160)/2,scale=1080:1920,tpad=stop_mode=clone:stop_duration=1.6,eq=contrast=1.2:brightness=-0.08:saturation=0.2,colorchannelmixer=rr=1.2:gg=0.15:bb=0.15[vend];
+
+[vgame][vui][vend]concat=n=3:v=1:a=0[vcat];
+
+[vcat]drawtext=font='Arial':text='Ever get rolled in Arc Raiders and something just feels off?':fontcolor=white:fontsize=58:line_spacing=10:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h-290:enable='between(t,0,5.2)',
+ drawtext=font='Arial':text='Grab their profile and check it on SteamChecker.io.':fontcolor=white:fontsize=58:line_spacing=10:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h-290:enable='between(t,5.2,8.7)',
+ drawtext=font='Arial':text='It gives a trust score based on things like account age and bans.':fontcolor=white:fontsize=52:line_spacing=10:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h-290:enable='between(t,8.7,13.2)',
+ drawtext=font='Arial':text='You can instantly know if they were legit or a sketchy account.':fontcolor=white:fontsize=52:line_spacing=10:borderw=4:bordercolor=black:x=(w-text_w)/2:y=h-290:enable='between(t,13.2,17.0)',setsar=1[vout];
+
+[0:a]atrim=start=23:end=25.6,asetpts=PTS-STARTPTS,volume=0.55[a0a];
+[0:a]atrim=start=25.6:end=26.7,asetpts=PTS-STARTPTS,atempo=0.5,volume=0.6[a0b];
+aevalsrc=0:d=0.8[a0c];
+[a0a][a0b][a0c]concat=n=3:v=0:a=1[agame];
+aevalsrc=0:d=11.4[asil];
+[agame][asil]concat=n=2:v=0:a=1[abase];
+[2:a]atrim=start=0:end=17,asetpts=PTS-STARTPTS,volume=1.35[anarr];
+[3:a]atrim=start=0:end=1.6,asetpts=PTS-STARTPTS,volume=0.24,afade=t=out:st=1.2:d=0.4,adelay=15400|15400[asting];
+[abase][anarr][asting]amix=inputs=3:duration=first,loudnorm=I=-13:TP=-1.5:LRA=9[aout]

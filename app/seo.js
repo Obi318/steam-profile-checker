@@ -15,19 +15,25 @@ export function getSiteUrl() {
 
 export const seoConfig = {
   siteName: "Steam Profile Checker",
-  titleDefault: "Steam Profile Checker",
+  titleDefault: "Steam Profile Checker | Trust & Reputation Score",
   titleTemplate: "%s | Steam Profile Checker",
   description:
-    "Check a Steam profile fast with a trust-style score based on public signals like account age and ban indicators. Paste a Steam URL, vanity name, or SteamID64.",
+    "Check any Steam profile instantly. Get a Trust Score based on account age, ban indicators, and transparency signals. The fastest CS2 and Steam reputation checker.",
   ogImagePath: "/opengraph-image.png",
   twitterImagePath: "/twitter-image.png",
   keywords: [
     "steam profile checker",
     "steam trust score",
+    "cs2 profile checker",
+    "cs2 trust score",
     "steam account checker",
     "steam profile trust",
     "steam ban checker",
     "steam vac checker",
     "steam account legitimacy",
+    "steam trading scam check",
+    "is this steam profile legit",
+    "steam scammed check",
+    "check steam id",
   ],
 };

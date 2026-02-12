@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+    <title>SteamChecker Ad Sequencer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1080px;
+            height: 1920px;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+            transform-origin: top left;
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .scene.active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        /* Scene 1: Gameplay Fail */
+        #scene-gameplay {
+            background: radial-gradient(circle, #330000 0%, #000000 100%);
+        }
+
+        .hud-overlay {
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 150px #ff0000;
+            animation: pulse-red 0.5s infinite;
+        }
+
+        .eliminated-text {
+            font-size: 140px;
+            font-weight: 900;
+            color: #ff0000;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            transform: scale(0.8);
+            animation: impact 0.2s forwards;
+        }
+
+        /* Scene 2: Rage */
+        #scene-rage {
+            background: #fff;
+        }
+
+        .rage-emoji {
+            font-size: 400px;
+            animation: shake 0.1s infinite;
+        }
+
+        /* Scene 3: Demo */
+        #scene-demo {
+            background: #0a0a0a;
+            justify-content: flex-start;
+            padding-top: 200px;
+        }
+
+        /* Scene 4: Result */
+        #scene-result {
+            background: #0a0a0a;
+        }
+
+        /* Scene 5: Soviet Poster */
+        #scene-soviet {
+            background: #c0392b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .constructivist-shape {
+            width: 600px;
+            height: 600px;
+            background: #f1c40f;
+            transform: rotate(45deg);
+            position: absolute;
+            z-index: 1;
+        }
+
+        .soviet-text {
+            font-size: 120px;
+            font-weight: 900;
+            color: #1a1a1a;
+            z-index: 2;
+            text-transform: uppercase;
+            line-height: 1;
+            text-align: center;
+        }
+
+        /* Captions */
+        .caption-box {
+            position: absolute;
+            bottom: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            width: 80%;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Animations */
+        @keyframes pulse-red {
+            0% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translate(1px, 1px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-1px, -2px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translate(-3px, 0px) rotate(1deg);
+            }
+
+            30% {
+                transform: translate(3px, 2px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(1px, -1px) rotate(1deg);
+            }
+
+            50% {
+                transform: translate(-1px, 2px) rotate(-1deg);
+            }
+
+            60% {
+                transform: translate(-3px, 1px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(3px, 1px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translate(-1px, -1px) rotate(1deg);
+            }
+
+            90% {
+                transform: translate(1px, 2px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(1px, -2px) rotate(-1deg);
+            }
+        }
+
+        @keyframes impact {
+            0% {
+                transform: scale(3);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes cursor-move {
+            0% {
+                top: 1000px;
+                left: 800px;
+            }
+
+            100% {
+                top: 600px;
+                left: 540px;
+            }
+        }
+
+        @keyframes type-text {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+
+        .cursor {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdib3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMSI+PHBhdGggZD0iTTAgMEwyNCAxMkwxMiAyNEwwIDB6Ii8+PC9zdmc+');
+            z-index: 50;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+
+        /* Mobile UI Mockup */
+        .mobile-ui {
+            width: 900px;
+            background: #000;
+            border-radius: 40px;
+            border: 2px solid #333;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .search-input {
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 20px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            font-size: 32px;
+            color: #fff;
+        }
+
+        .check-btn {
+            background: #10b981;
+            color: #000;
+            height: 100px;
+            border-radius: 20px;
+            font-size: 40px;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            /* Hidden initially */
+        }
+
+        .verdict {
+            font-size: 80px;
+            font-weight: 900;
+            font-style: italic;
+            color: #10b981;
+            text-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+            margin: 40px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Audio Elements (Optional check) -->
+    <!-- Captions -->
+    <div id="caption" class="caption-box hidden"></div>
+
+    <!-- Scene 1: Gameplay Fail -->
+    <div id="scene-gameplay" class="scene">
+        <div class="hud-overlay"></div>
+        <div class="eliminated-text">ELIMINATED</div>
+    </div>
+
+    <!-- Scene 2: Rage -->
+    <div id="scene-rage" class="scene">
+        <div class="rage-emoji">🤬</div>
+    </div>
+
+    <!-- Scene 3 & 4: Demo & Result -->
+    <div id="scene-demo" class="scene">
+        <div class="cursor" id="cursor" style="top: 1200px; left: 900px;"></div>
+
+        <div class="mobile-ui">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 60px; font-weight: 900; color: white;">STEAM CHECKER</h1>
+            </div>
+
+            <div class="search-input" id="search-box">
+                <span id="typed-text" style="border-right: 2px solid #10b981;"></span>
+            </div>
+
+            <div class="check-btn" id="check-btn">CHECK REPUTATION</div>
+
+            <div class="result-card" id="result-card">
+                <img src="https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg"
+                    style="width: 150px; height: 150px; border-radius: 20px; margin: 0 auto;">
+                <h2 style="font-size: 40px; color: white; margin: 20px 0;">RussianHacker99</h2>
+                <div class="verdict">SUSPECT</div>
+                <div style="font-size: 30px; color: #888;">VAC BAN DETECTED <br> NEW ACCOUNT</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scene 5: Soviet Poster -->
+    <div id="scene-soviet" class="scene">
+        <div class="constructivist-shape"></div>
+        <div class="soviet-text">TRUST <br> VERIFIED</div>
+        <div style="margin-top: 50px; z-index: 2; font-size: 40px; color: #1a1a1a;">STEAMCHECKER.IO</div>
+    </div>
+
+    <script>
+        const caption = document.getElementById('caption');
+        const cursor = document.getElementById('cursor');
+        const typedText = document.getElementById('typed-text');
+        const resultCard = document.getElementById('result-card');
+
+        function setCaption(text) {
+            if (!text) {
+                caption.classList.add('hidden');
+            } else {
+                caption.classList.remove('hidden');
+                caption.innerText = text;
+            }
+        }
+
+        function showScene(id) {
+            document.querySelectorAll('.scene').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function runSequence() {
+            // 0s - Scene 1
+            showScene('scene-gameplay');
+            setCaption("Ever get rolled in Arc Raiders...");
+            await wait(3000);
+
+            // 3s - Scene 2
+            showScene('scene-rage');
+            setCaption("...and something feels OFF?");
+            await wait(2000);
+
+            // 5s - Scene 3 (Demo)
+            showScene('scene-demo');
+            setCaption("Check them on SteamChecker.io");
+
+            // Animate Cursor
+            cursor.style.transition = "all 1s ease-out";
+            setTimeout(() => { cursor.style.top = "600px"; cursor.style.left = "500px"; }, 100);
+            await wait(1000); // Wait for move
+
+            // Click simulation
+            cursor.style.transform = "scale(0.8)";
+            setTimeout(() => cursor.style.transform = "scale(1)", 100);
+            await wait(500);
+
+            // Type text
+            const id = "76561198000000000";
+            for (let i = 0; i < id.length; i++) {
+                typedText.innerText += id[i];
+                await wait(50);
+            }
+            await wait(500);
+
+            // Move to button
+            cursor.style.top = "800px";
+            await wait(800);
+
+            // Click Button
+            cursor.style.transform = "scale(0.8)";
+            setTimeout(() => cursor.style.transform = "scale(1)", 100);
+            await wait(200);
+
+            // Show Result
+            setCaption("Instant Trust Score based on age & bans.");
+            resultCard.style.display = "block";
+            resultCard.classList.add("animate-in", "slide-in-from-bottom-10", "fade-in", "duration-500");
+            await wait(4000);
+
+            // 15s - Scene 5
+            showScene('scene-soviet');
+            setCaption("Legit... or Russian Hacker?");
+            await wait(3000);
+
+            // End
+            setCaption("");
+        }
+
+        function resize() {
+            const scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
+            document.body.style.transform = `scale(${scale})`;
+            if (window.innerWidth / window.innerHeight > 1080 / 1920) {
+                document.body.style.marginLeft = `${(window.innerWidth - 1080 * scale) / 2}px`;
+            } else {
+                document.body.style.marginLeft = 0;
+            }
+        }
+        window.onresize = resize;
+        resize();
+
+        // Auto-start when loaded (controlled by the recorder script)
+        window.onload = runSequence;
+    </script>
+</body>
+
+</html>
