@@ -26,10 +26,10 @@ export default function OpenGraphImage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", fontSize: 28, color: "#93c5fd" }}>Steam Profile Checker</div>
           <div style={{ display: "flex", fontSize: 72, fontWeight: 700, lineHeight: 1.05 }}>
-            Fast Trust-Style Steam Profile Checks
+            Deleted Too Fast? Check Steam Trust Signals
           </div>
           <div style={{ display: "flex", fontSize: 32, color: "#d1d5db" }}>
-            Account age, bans, library footprint, and social signals.
+            Account age, bans, library footprint, and profile transparency.
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>

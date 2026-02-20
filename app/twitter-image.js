@@ -26,11 +26,11 @@ export default function TwitterImage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", fontSize: 28, color: "#93c5fd" }}>Steam Profile Checker</div>
           <div style={{ display: "flex", fontSize: 66, fontWeight: 700, lineHeight: 1.1 }}>
-            Check Steam Profiles in Seconds
+            Sus Kill? Pull A Steam Trust Snapshot
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 32, color: "#d1d5db" }}>
-          Trust-style score from public Steam signals.
+          Fast context for competitive squads.
         </div>
       </div>
     ),

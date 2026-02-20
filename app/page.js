@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { track } from "@vercel/analytics";
+import { gameLandingPages, guidePages } from "./marketing-data";
 
 function isSteamishInput(s) {
   const t = (s || "").trim();
@@ -170,29 +172,29 @@ function tierForBans(bans, economyRelevant) {
 
 const FAQ_ITEMS = [
   {
-    question: "What is a Steam trust score?",
+    question: "What is this Trust Score?",
     answer:
-      "It is a quick snapshot score based on public Steam signals like account age, ban indicators, library footprint, friends count, Steam level, and optional game hours.",
+      "A reality check on whether a player is sus or just cracked. We analyze account age, bans, library depth, and friends to spot red flags.",
   },
   {
-    question: "Does this check VAC bans?",
+    question: "Does this detect cheats?",
     answer:
-      "Yes. If ban data is visible from Steam, VAC and game ban indicators are included in the score model and shown in the ban row.",
+      "We aren't an anti-cheat. We reveal the *likelihood* of a burner account. If they have a 2-day old account, 1 game, and no friends, you know the deal.",
   },
   {
-    question: "What can I paste into the checker?",
+    question: "What can I check?",
     answer:
-      "You can paste a Steam profile URL, a vanity name, or a 17-digit SteamID64.",
+      "Paste their Steam profile URL, custom ID, or SteamID64. We'll pull the public data instantly.",
   },
   {
-    question: "Is this an official Steam tool?",
+    question: "Is this official?",
     answer:
-      "No. It is an independent utility that reads public Steam data and summarizes it. It is not an anti-cheat detector.",
+      "No. We are an independent tool for gamers who want peace of mind after a suspicious death.",
   },
   {
-    question: "Why can a profile score lower even with no bans?",
+    question: "Why is the score low with no bans?",
     answer:
-      "Missing public signals like private friends or game library visibility can reduce confidence, so scores may stay moderate even without ban history.",
+      "Private profiles are suspicious. If they hide their hours, friends, and games, they're hiding something. Real players usually have nothing to hide.",
   },
 ];
 
@@ -236,6 +238,14 @@ export default function HomePage() {
     return games.find((g) => g.appid === id) || null;
   }, [selectedAppId, games]);
 
+  function trackEvent(name, payload = {}) {
+    try {
+      track(name, payload);
+    } catch {
+      // No-op when analytics is unavailable in local/dev contexts.
+    }
+  }
+
   function buildShareUrl({ steamid, appid }) {
     if (typeof window === "undefined") return "";
 
@@ -243,9 +253,15 @@ export default function HomePage() {
     u.searchParams.delete("q");
     u.searchParams.delete("id");
     u.searchParams.delete("game");
+    u.searchParams.delete("utm_source");
+    u.searchParams.delete("utm_medium");
+    u.searchParams.delete("utm_campaign");
 
     if (steamid) u.searchParams.set("id", String(steamid));
     if (appid) u.searchParams.set("game", String(appid));
+    u.searchParams.set("utm_source", "steamchecker_share");
+    u.searchParams.set("utm_medium", "profile_link");
+    u.searchParams.set("utm_campaign", "trust_snapshot");
 
     return u.toString();
   }
@@ -261,6 +277,10 @@ export default function HomePage() {
 
     const appidNum = appidOverride ? Number(appidOverride) : selectedGame?.appid ?? null;
     const gameName = appidNum ? games.find((g) => g.appid === appidNum)?.name ?? null : null;
+    trackEvent("check_started", {
+      has_game_context: Boolean(appidNum),
+      game: gameName || "none",
+    });
 
     setLoading(true);
     try {
@@ -288,12 +308,20 @@ export default function HomePage() {
       }
 
       setData(j);
+      trackEvent("check_completed", {
+        verdict: j?.verdict || "UNKNOWN",
+        trust_score: typeof j?.trustLevel === "number" ? j.trustLevel : -1,
+        game: gameName || "none",
+      });
 
       // Persist a stable permalink using SteamID64 once resolved.
       const shareUrl = buildShareUrl({ steamid: j?.steamid ?? null, appid: appidNum });
       if (shareUrl) window.history.replaceState(null, "", shareUrl);
     } catch (e) {
       setErr(e?.message || "Something went wrong.");
+      trackEvent("check_failed", {
+        game: gameName || "none",
+      });
     } finally {
       setLoading(false);
     }
@@ -318,6 +346,10 @@ export default function HomePage() {
 
     const handleSuccess = (msg) => {
       setShareHint(msg);
+      trackEvent("share_completed", {
+        share_type: msg,
+        has_game_context: Boolean(selectedAppId),
+      });
       setTimeout(() => setShareHint(""), 2500);
     };
 
@@ -366,7 +398,35 @@ export default function HomePage() {
       }
     } catch (err) {
       setShareHint("Copy failed");
+      trackEvent("share_failed", {
+        has_game_context: Boolean(selectedAppId),
+      });
       setTimeout(() => setShareHint(""), 2500);
+    }
+  }
+
+  async function onCopyReport() {
+    if (!data) return;
+
+    const bansCount = (data.bans?.NumberOfVACBans ?? 0) + (data.bans?.NumberOfGameBans ?? 0);
+    const bansText = bansCount > 0 ? `${bansCount} BANS` : "NO BANS";
+    const scoreText = typeof data.trustLevel === "number" ? `${data.trustLevel}/100` : "UNK";
+    const verdict = data.verdict || "UNKNOWN";
+    const url = buildShareUrl({ steamid: data.steamid, appid: selectedAppId || null });
+
+    const report = `🔍 Steam Checker Report\n👤 Player: ${data.personaName}\n🎯 Trust: ${scoreText} (${verdict})\n🚫 Bans: ${bansText}\n🔗 ${url}`;
+
+    try {
+      await navigator.clipboard.writeText(report);
+      setShareHint("Report Copied!");
+      trackEvent("report_copied", {
+        verdict,
+        trust_score: scoreText,
+      });
+      setTimeout(() => setShareHint(""), 2500);
+    } catch (e) {
+      setShareHint("Failed to copy");
+      trackEvent("report_copy_failed");
     }
   }
 
@@ -378,11 +438,25 @@ export default function HomePage() {
     const sp = new URLSearchParams(window.location.search);
     const id = (sp.get("id") || sp.get("q") || "").trim();
     const game = (sp.get("game") || "").trim();
+    const utmSource = (sp.get("utm_source") || "").trim();
+    const utmMedium = (sp.get("utm_medium") || "").trim();
+    const utmCampaign = (sp.get("utm_campaign") || "").trim();
+
+    if (utmSource || utmMedium || utmCampaign) {
+      trackEvent("landing_attribution", {
+        source: utmSource || "unknown",
+        medium: utmMedium || "unknown",
+        campaign: utmCampaign || "unknown",
+      });
+    }
+
+    if (game && games.some((entry) => String(entry.appid) === game)) {
+      setSelectedAppId(game);
+    }
 
     if (!id) return;
 
     setInput(id);
-    if (game) setSelectedAppId(game);
 
     // Run once on load if link is valid.
     if (isSteamishInput(id)) {
@@ -532,7 +606,7 @@ export default function HomePage() {
                     Steam Checker
                   </h1>
                   <div className="text-xs sm:text-sm text-white/40 font-bold uppercase tracking-[0.2em] max-w-lg mx-auto leading-relaxed">
-                    Instant trust analysis for any Steam account.
+                    Deleted in 0.1s? Check if they're legit.
                   </div>
                 </div>
 
@@ -676,13 +750,32 @@ export default function HomePage() {
                               {shareHint}
                             </span>
                           )}
-                          <button
-                            onClick={onShare}
-                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 shadow-xl"
-                            title="Share this result"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                          </button>
+                          <div className="flex gap-2 flex-wrap justify-end">
+                            <button
+                              onClick={onCopyReport}
+                              className="px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 shadow-xl text-xs font-bold uppercase tracking-wider"
+                              title="Copy Report to Clipboard"
+                            >
+                              Copy Report
+                            </button>
+                            <a
+                              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Checked ${data.personaName} on Steam Checker — Trust: ${typeof data.trustLevel === 'number' ? data.trustLevel : '?'}/100 (${data.verdict || 'UNKNOWN'})`)}&url=${encodeURIComponent(buildShareUrl({ steamid: data.steamid, appid: selectedAppId || null }))}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 shadow-xl text-xs font-bold uppercase tracking-wider"
+                              title="Share to X / Twitter"
+                              onClick={() => trackEvent('share_completed', { share_type: 'twitter', has_game_context: Boolean(selectedAppId) })}
+                            >
+                              Share to X
+                            </a>
+                            <button
+                              onClick={onShare}
+                              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/10 hover:border-white/20 hover:scale-105 active:scale-95 shadow-xl"
+                              title="Share Link"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -823,6 +916,70 @@ export default function HomePage() {
             )}
           </div>
         </div>
+
+        {/* How It Works Section */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <h3 className="text-xl font-bold text-white mb-8 text-center uppercase tracking-widest opacity-80">How It Works</h3>
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              { step: "1", icon: "📋", title: "Paste Profile URL", body: "Copy the suspicious player's Steam profile URL, vanity name, or SteamID64 from the scoreboard or recent players." },
+              { step: "2", icon: "⚡", title: "Get Trust Snapshot", body: "Steam Checker analyzes account age, bans, games owned, friends, Steam level, and optional game hours in seconds." },
+              { step: "3", icon: "📤", title: "Share With Squad", body: "Copy the report or share link and paste it into Discord or team comms. Align fast, re-queue faster." },
+            ].map((item) => (
+              <div key={item.step} className="glass-card p-6 rounded-2xl border border-white/5 text-center hover:bg-white/5 transition-colors group">
+                <div className="text-3xl mb-3">{item.icon}</div>
+                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-black text-sm mb-3">{item.step}</div>
+                <h4 className="text-white font-bold text-lg">{item.title}</h4>
+                <p className="mt-2 text-white/60 text-sm leading-relaxed">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Social Proof Strip */}
+        <div className="mt-14 max-w-4xl mx-auto">
+          <div className="glass-card rounded-2xl p-6 border border-white/5">
+            <div className="text-center mb-4">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">Built For Competitive Gamers</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { stat: "6", label: "Trust Signals Analyzed" },
+                { stat: "13+", label: "Games Supported" },
+                { stat: "<10s", label: "Time to Result" },
+                { stat: "100%", label: "Free & Anonymous" },
+              ].map((item) => (
+                <div key={item.label} className="text-center py-2">
+                  <div className="text-2xl font-black text-white">{item.stat}</div>
+                  <div className="text-xs text-white/50 font-medium uppercase tracking-wide mt-1">{item.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Scenario Narrative */}
+        <div className="mt-14 max-w-3xl mx-auto">
+          <div className="glass-card rounded-2xl p-8 border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 via-yellow-500 to-emerald-500 opacity-60" />
+            <p className="text-white/50 text-xs font-bold uppercase tracking-[0.2em] mb-4 pl-4">Sound Familiar?</p>
+            <p className="text-white/90 text-lg leading-relaxed pl-4">
+              Saturday night. Your squad is rolling. Best gear equipped, comms are dialed, Red Bull cracked.
+              Then you get <span className="text-red-400 font-bold">one-tapped from nowhere</span> — downed in
+              under a second. All headshots. No time to react.
+            </p>
+            <p className="mt-4 text-white/70 text-[15px] leading-relaxed pl-4">
+              Your squad explodes. "No way that's legit." Everyone's thinking the same thing. You pull up Steam,
+              find their profile, and now what? Spend five minutes manually reading their page?
+            </p>
+            <p className="mt-4 text-white/70 text-[15px] leading-relaxed pl-4">
+              <span className="text-emerald-400 font-bold">That's what Steam Checker is for.</span> Paste the profile URL,
+              hit Check, and in seconds you know: account age, bans, library depth, friends, hours. A trust snapshot
+              your whole squad can see. Context, not accusations. Then re-queue.
+            </p>
+          </div>
+        </div>
+
         {/* FAQ Section */}
         <div className="mt-24 max-w-3xl mx-auto">
           <h3 className="text-xl font-bold text-white mb-8 text-center uppercase tracking-widest opacity-80">Frequently Asked Questions</h3>
@@ -835,13 +992,49 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+        <div className="mt-14 max-w-5xl mx-auto rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+          <h3 className="text-lg font-bold text-white uppercase tracking-wider">Competitive Guides And Game Pages</h3>
+          <p className="mt-2 text-sm text-white/65">
+            New here from search? Start with a guide or open your game-specific checker funnel.
+          </p>
 
+          <div className="mt-5">
+            <div className="text-xs font-bold uppercase tracking-widest text-white/40">Guides</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {guidePages.map((guide) => (
+                <a
+                  key={guide.path}
+                  href={`${guide.path}?utm_source=homepage&utm_medium=internal&utm_campaign=guide_navigation`}
+                  className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/10 hover:text-white"
+                >
+                  {guide.title}
+                </a>
+              ))}
+            </div>
+          </div>
 
+          <div className="mt-5">
+            <div className="text-xs font-bold uppercase tracking-widest text-white/40">Game-Specific Landers</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {gameLandingPages.map((page) => (
+                <a
+                  key={page.path}
+                  href={`${page.path}?utm_source=homepage&utm_medium=internal&utm_campaign=game_navigation`}
+                  className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/10 hover:text-white"
+                >
+                  {page.gameName}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
         {/* Footer */}
         <div className="mt-12 text-center text-white/20 text-xs">
-          <p>© 2024 Steam Checker. Not affiliated with Valve Corp.</p>
+          <p>(c) 2026 Steam Checker. Not affiliated with Valve Corp.</p>
         </div>
       </div>
     </main>
   );
 }
+
+

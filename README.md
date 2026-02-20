@@ -38,3 +38,6 @@ Open http://localhost:3000
 - App Router: `app/`
 - API route: `app/api/check/route.js`
 - UI: `app/page.js`
+- Marketing hub: `app/marketing/page.js`
+- Game landing pages: `app/game/[slug]/page.js`
+- Marketing docs: `docs/marketing-strategy.md`, `docs/community-copy-bank.md`, `docs/utm-link-map.md`
