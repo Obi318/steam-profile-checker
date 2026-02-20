@@ -732,19 +732,19 @@ export default function HomePage() {
                       </div>
 
                       {/* Verdict */}
-                      <div className="mt-8 mb-2">
+                      <div className="mt-8">
                         <div className="text-xs font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Trust Verdict</div>
                         <div className={`text-4xl sm:text-5xl font-black italic tracking-tight ${verdictColorClass(data.verdict)}`}>
                           {data.verdict}
                         </div>
-                        <p className="mt-4 text-white/60 text-sm leading-relaxed border-l-2 border-white/10 pl-4">
+                        <p className="mt-4 text-white/60 text-sm leading-relaxed border-l-2 border-white/10 pl-4 break-words">
                           {scoreSummary || "Analysis based on public profile visibility."}
                         </p>
                       </div>
 
                       {/* Share */}
                       {data?.steamid && (
-                        <div className="mt-4 flex flex-col items-start gap-2">
+                        <div className="mt-5 pt-4 border-t border-white/10 flex flex-col items-start gap-2">
                           {shareHint && (
                             <span className="text-xs font-bold text-emerald-400 bg-black/80 backdrop-blur-md px-2 py-1 rounded-md border border-emerald-500/20 shadow-lg">
                               {shareHint}
@@ -1036,5 +1036,4 @@ export default function HomePage() {
     </main>
   );
 }
-
 
